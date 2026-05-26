@@ -1,8 +1,8 @@
-"""Score SECRET-001 (no hardcoded secrets) against the labeled evaluation corpus.
+"""Score SECRETPY-001 (no hardcoded secrets) against the labeled evaluation corpus.
 
 Runs the ``security_patterns`` check over the labeled corpus under
 ``tests/fixtures/security_hardcoded_secrets/``, compares everything it flags
-under the SECRET-001 rule prefix to the ground-truth labels in ``labels.json``,
+under the SECRETPY-001 rule prefix to the ground-truth labels in ``labels.json``,
 and reports precision, recall and F1 plus the explicit FP and FN lists.
 
 The corpus stratifies real-world Python patterns: AWS keys, password literals,
@@ -36,9 +36,9 @@ _LABELS = _CORPUS / "labels.json"
 _SECRET = "secret"
 _OK = "ok"
 
-# The rule string is the long form "SECRET-001: ..." — match by prefix so the
+# The rule string is the long form "SECRETPY-001: ..." — match by prefix so the
 # scorer stays stable if the description text is reworded.
-_RULE_PREFIX = "SECRET-001"
+_RULE_PREFIX = "SECRETPY-001"
 
 
 def _load_labels() -> dict[tuple[str, int], dict[str, str]]:
@@ -52,7 +52,7 @@ def _load_labels() -> dict[tuple[str, int], dict[str, str]]:
 
 
 def _flagged_sec003() -> set[tuple[str, int]]:
-    """Run the security check and return the set of SECRET-001-flagged (file, line)."""
+    """Run the security check and return the set of SECRETPY-001-flagged (file, line)."""
     check = get_check("security_patterns")
     if check is None:
         raise RuntimeError("security_patterns check is not registered")
@@ -78,11 +78,11 @@ def main() -> int:
     negatives = {key for key, entry in labels.items() if entry["label"] == _OK}
     flagged = _flagged_sec003()
 
-    # Every SECRET-001 flag must correspond to a labeled line; an unlabeled flag
+    # Every SECRETPY-001 flag must correspond to a labeled line; an unlabeled flag
     # means the corpus is missing a label and the precision number is untrustworthy.
     unlabeled = sorted(flagged - set(labels))
     if unlabeled:
-        print("error: SECRET-001 flagged lines that are not in labels.json:", file=sys.stderr)
+        print("error: SECRETPY-001 flagged lines that are not in labels.json:", file=sys.stderr)
         for rel_file, line in unlabeled:
             print(f"  {rel_file}:{line}", file=sys.stderr)
         print(
@@ -100,7 +100,7 @@ def main() -> int:
     recall = _ratio(numerator=tp, denominator=tp + fn)
     f1 = _ratio(numerator=2 * precision * recall, denominator=precision + recall)
 
-    print("SECRET-001 hardcoded-secret detector — evaluation against labeled corpus")
+    print("SECRETPY-001 hardcoded-secret detector — evaluation against labeled corpus")
     print(f"corpus: {_CORPUS}")
     print(
         f"labels: {len(labels)} lines "

@@ -165,14 +165,26 @@ class NamedArgsCheck:
 
     name: str = "named_args"
     description: str = "Named arguments enforcement (bare * separator)"
+    # KWARG-001 ships default-off: the audit flagged it as opinionated
+    # house style that will flood any codebase that doesn't already
+    # mandate keyword-only call sites. Opt in via
+    # ``[tool.lanorme.named_args] enabled = true``.
+    enabled: bool = False
     rules: list[str] = field(
         default_factory=lambda: [
-            "KWARG-001: Functions with >1 parameter must use bare * separator",
+            "KWARG-001: Functions with >1 parameter must use bare * separator (opt-in)",
         ],
     )
 
+    def configure(self, *, settings: dict[str, bool]) -> None:
+        """Apply ``[tool.lanorme.named_args]`` configuration."""
+        if "enabled" in settings:
+            self.enabled = bool(settings["enabled"])
+
     def run(self, *, src_root: str) -> CheckResult:
         """Scan all Python files under src/ and flag functions missing bare ``*``."""
+        if not self.enabled:
+            return CheckResult(check=self.name, status=Status.PASS, violations=[])
         violations: list[Violation] = []
         warnings: list[Violation] = []
         src_path = Path(src_root)

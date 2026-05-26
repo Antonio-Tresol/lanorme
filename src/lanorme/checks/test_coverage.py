@@ -1,4 +1,4 @@
-"""TEST-001: every production module must have a corresponding test.
+"""TESTFILE-001: every production module must have a corresponding test.
 
 A single advisory (WARNING) rule, surfaced when a file in a configured
 production directory lacks a matching ``test_*.py`` partner under ``tests/``.
@@ -20,7 +20,7 @@ from lanorme import CheckResult, Status, Violation, register
 
 
 # ---------------------------------------------------------------------------
-# TEST-001 helpers
+# TESTFILE-001 helpers
 # ---------------------------------------------------------------------------
 
 
@@ -114,7 +114,7 @@ def _check_module_coverage(
     src_root: str,
     backend_root: Path,
 ) -> list[Violation]:
-    """TEST-001: verify every production module has a corresponding test."""
+    """TESTFILE-001: verify every production module has a corresponding test."""
     modules = _find_production_modules(src_root=src_root)
     test_files = _find_test_files(backend_root=backend_root)
     test_stems = {f.stem for f in test_files}
@@ -138,7 +138,7 @@ def _check_module_coverage(
                 Violation(
                     file=rel_path,
                     line=1,
-                    rule="TEST-001: Every production module must have a corresponding test",
+                    rule="TESTFILE-001: Every production module must have a corresponding test",
                     message=f"No test file found for module '{name}'",
                     fix=(
                         f"Create tests/integration/test_{name}.py with at least one "
@@ -158,7 +158,7 @@ class TestCoverageCheck:
     description: str = "Test coverage: every production module has a test"
     rules: list[str] = field(
         default_factory=lambda: [
-            "TEST-001: Every production module must have a corresponding test",
+            "TESTFILE-001: Every production module must have a corresponding test",
         ],
     )
 

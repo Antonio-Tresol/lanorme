@@ -117,7 +117,10 @@ class TestStyleCheck:
 
     name: str = "test_style"
     description: str = "AAA-style and DRY enforcement for pytest test suites"
-    enabled: bool = True
+    # Ships default-off: the audit flagged AAA-001's comment-marker
+    # mandate as something that will fire on essentially every existing
+    # pytest suite. Opt in via ``[tool.lanorme.test_style] enabled = true``.
+    enabled: bool = False
     min_statements: int = 3
     required_markers: int = 2
     dry_prefix_statements: int = 3

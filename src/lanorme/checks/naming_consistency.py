@@ -250,14 +250,27 @@ class NamingConsistencyCheck:
 
     name: str = "naming_consistency"
     description: str = "Naming convention enforcement (methods, endpoints, booleans)"
+    # NAMING-001 / NAMING-002 (CRUD prefixes) ship default-off: the audit
+    # surfaced that they actively suppress the ubiquitous-language verbs
+    # the TERM check exists to protect (approve_loan, transfer_funds, etc.).
+    # Opt in via [tool.lanorme.naming_consistency] repo_crud = true / service_crud = true.
+    repo_crud: bool = False
+    service_crud: bool = False
     rules: list[str] = field(
         default_factory=lambda: [
-            "NAMING-001: Repository methods must use get_/create_/update_/delete_/list_ prefixes",
-            "NAMING-002: Service methods must use get_/create_/update_/delete_/list_ prefixes",
+            "NAMING-001: Repository methods must use get_/create_/update_/delete_/list_ prefixes (opt-in)",
+            "NAMING-002: Service methods must use get_/create_/update_/delete_/list_ prefixes (opt-in)",
             "NAMING-003: Endpoint handlers should match HTTP verb (warning)",
             "NAMING-004: Boolean functions should use is_/has_/can_/should_ prefix (warning)",
         ],
     )
+
+    def configure(self, *, settings: dict[str, bool]) -> None:
+        """Apply ``[tool.lanorme.naming_consistency]`` configuration."""
+        if "repo_crud" in settings:
+            self.repo_crud = bool(settings["repo_crud"])
+        if "service_crud" in settings:
+            self.service_crud = bool(settings["service_crud"])
 
     def run(self, *, src_root: str) -> CheckResult:
         """Scan source files and validate naming conventions."""
@@ -274,8 +287,8 @@ class NamingConsistencyCheck:
             except (OSError, UnicodeDecodeError, SyntaxError):
                 continue
 
-            # NAMING-001: Repository method naming.
-            if _file_is_under(relative_path=relative_file, directories=REPO_DIRS):
+            # NAMING-001: Repository method naming (opt-in; conflicts with DDD ubiquitous-language).
+            if self.repo_crud and _file_is_under(relative_path=relative_file, directories=REPO_DIRS):
                 violations.extend(
                     _check_repo_and_service_naming(
                         tree=tree,
@@ -285,8 +298,8 @@ class NamingConsistencyCheck:
                     ),
                 )
 
-            # NAMING-002: Service method naming.
-            if _file_is_under(relative_path=relative_file, directories=SERVICE_DIRS):
+            # NAMING-002: Service method naming (opt-in; conflicts with DDD ubiquitous-language).
+            if self.service_crud and _file_is_under(relative_path=relative_file, directories=SERVICE_DIRS):
                 violations.extend(
                     _check_repo_and_service_naming(
                         tree=tree,

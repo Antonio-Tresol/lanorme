@@ -1,9 +1,14 @@
-"""IMPORT-001, TYPING-001, ENDPOINT-001: Pattern divergence detection.
+"""IMPORT-001 and ENDPOINT-001: Pattern divergence detection.
 
 Rules:
     IMPORT-001    No inline imports inside functions, all imports at module level
-    TYPING-001    No ``if TYPE_CHECKING:`` guards in non-model files
     ENDPOINT-001  Endpoint functions should not exceed nesting depth of 4 (warning)
+
+The earlier TYPING-001 (no ``if TYPE_CHECKING:`` outside model files) was
+dropped on 2026-05-26: the multi-reviewer audit found that the rule inverted
+the community typing consensus (ruff's TCH family actively *promotes*
+``TYPE_CHECKING`` guards to keep runtime import graphs lean). It can come back
+later as an explicit opt-in with the premise inverted (encourage, not forbid).
 
 Run:
     lanorme check . --check=pattern_divergence
@@ -138,69 +143,7 @@ def _check_inline_imports(
 
 
 # ---------------------------------------------------------------------------
-# TYPING-001: No TYPE_CHECKING guards in non-model files
-# ---------------------------------------------------------------------------
-
-
-def _check_type_checking_guards(
-    *,
-    tree: ast.AST,
-    source_lines: list[str],
-    relative_file: str,
-) -> list[Violation]:
-    """TYPING-001: Find ``if TYPE_CHECKING:`` blocks outside models/observability dirs."""
-    # Exempt files under infrastructure/db/models/ (ORM forward refs)
-    # and infrastructure/observability/ (conditional OTel type imports).
-    normalized = relative_file.replace("\\", "/")
-    if normalized.startswith(_MODELS_DIR) or normalized.startswith("infrastructure/observability/"):
-        return []
-
-    violations: list[Violation] = []
-
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.If):
-            continue
-
-        test = node.test
-        is_tc_guard = False
-
-        if (
-            isinstance(test, ast.Name)
-            and test.id == "TYPE_CHECKING"
-            or isinstance(test, ast.Attribute)
-            and test.attr == "TYPE_CHECKING"
-        ):
-            is_tc_guard = True
-
-        if not is_tc_guard:
-            continue
-
-        if _line_has_noqa(
-            source_lines=source_lines,
-            lineno=node.lineno,
-            rule="TYPING-001",
-        ):
-            continue
-
-        violations.append(
-            Violation(
-                file=relative_file,
-                line=node.lineno,
-                rule="TYPING-001: No TYPE_CHECKING guards in non-model files",
-                message="if TYPE_CHECKING: block found — import types directly at the top",
-                fix=(
-                    "Remove the TYPE_CHECKING guard and import the type directly. "
-                    "Only infrastructure/db/models/ is exempt (ORM forward refs)"
-                ),
-            ),
-        )
-
-    return violations
-
-
-# ---------------------------------------------------------------------------
-# PATTERN-003 is intentionally vacant; the number is reserved so existing
-# rule references stay stable.
+# (TYPING-001 was removed on 2026-05-26; see the module docstring.)
 # ---------------------------------------------------------------------------
 
 
@@ -301,7 +244,6 @@ class PatternDivergenceCheck:
     rules: list[str] = field(
         default_factory=lambda: [
             "IMPORT-001: No inline imports inside functions",
-            "TYPING-001: No TYPE_CHECKING guards in non-model files",
             "ENDPOINT-001: Endpoint nesting depth exceeds threshold (warning)",
         ],
     )

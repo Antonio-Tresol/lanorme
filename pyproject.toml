@@ -39,6 +39,7 @@ exclude = [
     "docs/cmt001-corpus-design.md", # auto-generated first-team corpus design (verbatim agent prose)
     "docs/sec002-corpus-design.md", # auto-generated first-team corpus design (verbatim agent prose)
     "docs/sec003-corpus-design.md", # auto-generated first-team corpus design (verbatim agent prose)
+    "docs/audit/*",                 # multi-reviewer audit reports (verbatim reviewer prose)
     ".venv/*",
     "dist/*",
 ]
@@ -49,3 +50,11 @@ enabled = true
 [tool.lanorme.comments]
 em_dash = true
 emoji = true
+
+# Wave-A audit demotions: KWARG-001 and AAA-001/002 ship default-off (too
+# noisy on a generic project), but LaNorme dogfoods both on itself.
+[tool.lanorme.named_args]
+enabled = true
+
+[tool.lanorme.test_style]
+enabled = true

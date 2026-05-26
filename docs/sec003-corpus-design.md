@@ -1,7 +1,7 @@
-# SECRET-001 corpus design — hardcoded-secret evaluation
+# SECRETPY-001 corpus design — hardcoded-secret evaluation
 
 This document records the design of the labeled evaluation corpus for the
-SECRET-001 ("No hardcoded secrets in source code") rule and reports the current
+SECRETPY-001 ("No hardcoded secrets in source code") rule and reports the current
 detector's performance against it. Labels are derived from a working definition
 that is intentionally independent of any specific detection implementation.
 
