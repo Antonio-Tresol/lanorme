@@ -1,0 +1,160 @@
+{
+  "positives/pos_catchable_assignments.py": [
+    {"line": 11, "label": "restating", "note": "names the variable user_id and nothing more"},
+    {"line": 14, "label": "restating", "note": "echoes the variable name total"},
+    {"line": 17, "label": "restating", "note": "echoes the variable name result"},
+    {"line": 24, "label": "restating", "note": "echoes the variable name x"},
+    {"line": 27, "label": "restating", "note": "echoes the variable name y"},
+    {"line": 34, "label": "restating", "note": "echoes the variable name timeout"}
+  ],
+  "positives/pos_catchable_calls.py": [
+    {"line": 13, "label": "restating", "note": "restates 'return result'"},
+    {"line": 18, "label": "restating", "note": "restates items.sort()"},
+    {"line": 23, "label": "restating", "note": "restates json.dumps(payload)"},
+    {"line": 28, "label": "restating", "note": "restates parser.parse(url)"},
+    {"line": 33, "label": "restating", "note": "restates items.append(value)"},
+    {"line": 38, "label": "restating", "note": "restates connection.close()"}
+  ],
+  "positives/pos_catchable_control.py": [
+    {"line": 11, "label": "restating", "note": "restates 'while items'"},
+    {"line": 17, "label": "restating", "note": "echoes the variable name count"},
+    {"line": 23, "label": "restating", "note": "restates cache[key] access"},
+    {"line": 28, "label": "restating", "note": "echoes the variable name total"},
+    {"line": 34, "label": "restating", "note": "restates headers[name] access"}
+  ],
+  "positives/pos_catchable_realistic.py": [
+    {"line": 11, "label": "restating", "note": "echoes the variable name session"},
+    {"line": 14, "label": "restating", "note": "echoes the variable name headers"},
+    {"line": 17, "label": "restating", "note": "echoes the variable name response"},
+    {"line": 28, "label": "restating", "note": "echoes the variable name balance"},
+    {"line": 34, "label": "restating", "note": "echoes the variable name count"},
+    {"line": 37, "label": "restating", "note": "echoes the variable name errors"},
+    {"line": 44, "label": "restating", "note": "echoes the variable name first"},
+    {"line": 47, "label": "restating", "note": "echoes the variable name last"}
+  ],
+  "positives/pos_inline_restatements.py": [
+    {"line": 11, "label": "restating", "note": "inline; restates counter += 1 (detector ignores inline comments)"},
+    {"line": 12, "label": "restating", "note": "inline; restates total = total + counter"},
+    {"line": 13, "label": "restating", "note": "inline; restates name.strip()"},
+    {"line": 14, "label": "restating", "note": "inline; restates items.sort()"},
+    {"line": 15, "label": "restating", "note": "inline; restates items.reverse()"},
+    {"line": 16, "label": "restating", "note": "inline; restates 'return total'"},
+    {"line": 20, "label": "restating", "note": "inline; restates state.clear()"},
+    {"line": 21, "label": "restating", "note": "inline; restates state['count'] = 0"},
+    {"line": 25, "label": "restating", "note": "inline; restates 'return cache[key]'"}
+  ],
+  "positives/pos_synonym_more.py": [
+    {"line": 10, "label": "restating", "note": "synonym restatement of 'if not data'"},
+    {"line": 14, "label": "restating", "note": "synonym restatement of [n * 2 for n in data]"},
+    {"line": 17, "label": "restating", "note": "synonym restatement of the threshold filter"},
+    {"line": 20, "label": "restating", "note": "synonym restatement of 'return big'"},
+    {"line": 25, "label": "restating", "note": "synonym restatement of open(..., 'w')"},
+    {"line": 28, "label": "restating", "note": "synonym restatement of handle.write(...)"},
+    {"line": 31, "label": "restating", "note": "synonym restatement of handle.close()"},
+    {"line": 36, "label": "restating", "note": "synonym restatement of 'if len(rows) == 0: return None'"},
+    {"line": 40, "label": "restating", "note": "synonym restatement of 'return rows[0]'"}
+  ],
+  "positives/pos_synonym_restatements.py": [
+    {"line": 12, "label": "restating", "note": "synonym restatement of counter += 1"},
+    {"line": 15, "label": "restating", "note": "synonym restatement of 'for item in items'"},
+    {"line": 19, "label": "restating", "note": "synonym restatement of names.sort()"},
+    {"line": 26, "label": "restating", "note": "synonym restatement of output = {}"},
+    {"line": 29, "label": "restating", "note": "synonym restatement of the dict-building loop"},
+    {"line": 33, "label": "restating", "note": "synonym restatement of 'return output'"},
+    {"line": 38, "label": "restating", "note": "synonym restatement of 'flag = not flag'"},
+    {"line": 44, "label": "restating", "note": "synonym restatement of amount * 2"}
+  ],
+  "negatives/neg_why_rationale.py": [
+    {"line": 12, "label": "ok", "note": "why: explains the 503-under-load reason for retrying"},
+    {"line": 17, "label": "ok", "note": "why: explains the exponential back-off rationale"},
+    {"line": 27, "label": "ok", "note": "why: explains the locale thousands-separator quirk"},
+    {"line": 33, "label": "ok", "note": "why: explains that dict.fromkeys preserves order"},
+    {"line": 38, "label": "ok", "note": "why: explains casefold vs lower for German eszett"}
+  ],
+  "negatives/neg_warnings_invariants.py": [
+    {"line": 11, "label": "ok", "note": "invariant: input must be sorted (precondition)"},
+    {"line": 23, "label": "ok", "note": "warning: not thread-safe, lock required"},
+    {"line": 28, "label": "ok", "note": "warning: overflow caveat with bound"},
+    {"line": 33, "label": "ok", "note": "invariant: non-zero divisor guaranteed upstream"},
+    {"line": 38, "label": "ok", "note": "warning: security caveat about eval"},
+    {"line": 39, "label": "ok", "note": "inline noqa pragma suppressing S307"}
+  ],
+  "negatives/neg_todo_fixme.py": [
+    {"line": 7, "label": "ok", "note": "TODO task marker with a concrete improvement"},
+    {"line": 13, "label": "ok", "note": "FIXME with complexity and remediation note"},
+    {"line": 22, "label": "ok", "note": "HACK explaining the exporter quirk being worked around"},
+    {"line": 27, "label": "ok", "note": "NOTE documenting an ordering guarantee relied on elsewhere"},
+    {"line": 32, "label": "ok", "note": "XXX explaining a magic constant's meaning"}
+  ],
+  "negatives/neg_urls_refs.py": [
+    {"line": 7, "label": "ok", "note": "reference: link to the algorithm definition"},
+    {"line": 16, "label": "ok", "note": "reference: bug tracker URL for the workaround"},
+    {"line": 21, "label": "ok", "note": "reference: RFC citation for the escaping rules"},
+    {"line": 26, "label": "ok", "note": "reference: PR number and cross-language sync note"},
+    {"line": 31, "label": "ok", "note": "reference: issue ticket explaining a special case"}
+  ],
+  "negatives/neg_section_headers.py": [
+    {"line": 6, "label": "ok", "note": "banner rule above a section header"},
+    {"line": 7, "label": "ok", "note": "section header: navigation aid"},
+    {"line": 8, "label": "ok", "note": "banner rule below a section header"},
+    {"line": 19, "label": "ok", "note": "banner rule above a section header"},
+    {"line": 20, "label": "ok", "note": "section header: navigation aid"},
+    {"line": 21, "label": "ok", "note": "banner rule below a section header"},
+    {"line": 28, "label": "ok", "note": "region fold marker"},
+    {"line": 35, "label": "ok", "note": "endregion fold marker"},
+    {"line": 38, "label": "ok", "note": "short section header for a constants block"}
+  ],
+  "negatives/neg_pragmas.py": [
+    {"line": 1, "label": "ok", "note": "shebang line"},
+    {"line": 2, "label": "ok", "note": "encoding cookie"},
+    {"line": 7, "label": "ok", "note": "noqa pragma suppressing F401"},
+    {"line": 12, "label": "ok", "note": "type: ignore pragma"},
+    {"line": 16, "label": "ok", "note": "noqa pragma for missing annotation"},
+    {"line": 21, "label": "ok", "note": "fmt: off formatter directive"},
+    {"line": 26, "label": "ok", "note": "fmt: on formatter directive"},
+    {"line": 31, "label": "ok", "note": "type comment declaring list[int]"},
+    {"line": 35, "label": "ok", "note": "pylint disable directive"}
+  ],
+  "negatives/neg_license_legal.py": [
+    {"line": 1, "label": "ok", "note": "copyright header"},
+    {"line": 2, "label": "ok", "note": "license header line"},
+    {"line": 3, "label": "ok", "note": "license header line"},
+    {"line": 4, "label": "ok", "note": "SPDX license identifier"},
+    {"line": 11, "label": "ok", "note": "attribution notice"},
+    {"line": 16, "label": "ok", "note": "patent notice"},
+    {"line": 21, "label": "ok", "note": "export-control notice"}
+  ],
+  "negatives/neg_disambiguation.py": [
+    {"line": 7, "label": "ok", "note": "clarifies that slicing copies, not aliases"},
+    {"line": 12, "label": "ok", "note": "clarifies the overflow-avoiding midpoint formula"},
+    {"line": 17, "label": "ok", "note": "clarifies why next() has a default"},
+    {"line": 22, "label": "ok", "note": "clarifies 'or' triggers on any falsy value"},
+    {"line": 27, "label": "ok", "note": "clarifies the copy is intentionally shallow"},
+    {"line": 32, "label": "ok", "note": "clarifies Python floor-division semantics"}
+  ],
+  "negatives/neg_public_api_docs.py": [
+    {"line": 7, "label": "ok", "note": "usage example for a public function"},
+    {"line": 12, "label": "ok", "note": "documents accepted input formats and return unit"},
+    {"line": 18, "label": "ok", "note": "documents call ordering and conflict behaviour"},
+    {"line": 23, "label": "ok", "note": "documents the last-page-may-be-shorter contract"},
+    {"line": 29, "label": "ok", "note": "deprecation notice with migration path"}
+  ],
+  "negatives/neg_shared_vocab_hard.py": [
+    {"line": 14, "label": "ok", "note": "shares 'id' but adds the UUIDv4 audit constraint"},
+    {"line": 20, "label": "ok", "note": "shares 'timeout' but adds the millisecond unit"},
+    {"line": 26, "label": "ok", "note": "shares 'offset' but adds zero- vs one-based caveat"},
+    {"line": 32, "label": "ok", "note": "shares 'port' but explains the meaning of port 0"},
+    {"line": 38, "label": "ok", "note": "shares 'count' but adds the soft-delete exclusion"},
+    {"line": 44, "label": "ok", "note": "shares 'delay' but adds the doubling/seed semantics"},
+    {"line": 50, "label": "ok", "note": "shares 'cache' but adds the lifetime caveat"},
+    {"line": 55, "label": "ok", "note": "shares 'total' but adds the negative-during-reconciliation caveat"}
+  ],
+  "negatives/neg_shared_vocab_borderline.py": [
+    {"line": 13, "label": "ok", "note": "shares 'timeout' but adds the ms unit"},
+    {"line": 19, "label": "ok", "note": "shares 'offset' but adds the zero base"},
+    {"line": 25, "label": "ok", "note": "shares 'weight' but adds the kg unit"},
+    {"line": 31, "label": "ok", "note": "shares 'angle' but adds the radians unit"},
+    {"line": 37, "label": "ok", "note": "shares 'amount' but adds the cents unit"},
+    {"line": 43, "label": "ok", "note": "shares 'retries' but adds the cap of 5"}
+  ]
+}

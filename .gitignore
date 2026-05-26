@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+benchmarks/.corpora/

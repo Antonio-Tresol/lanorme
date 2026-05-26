@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lanorme"
+version = "0.1.0"
+description = "La norme — a configurable, pluggable architecture & code-quality linter for Python."
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+keywords = ["linter", "architecture", "code-quality", "static-analysis", "checks"]
+classifiers = [
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.scripts]
+lanorme = "lanorme.cli:main"
+
+# Plugin packages register checks under this entry-point group.
+# [project.entry-points."lanorme.checks"]
+# my-check = "my_package.my_module"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lanorme"]
+
+[tool.lanorme]
+# LaNorme dogfoods its own rules, minus the DDD/architecture-specific ones
+# (this is a flat library, not a layered domain app).
+ignore = ["LAYER", "PORT", "TERM"]
+exclude = [
+    "tests/fixtures/*",          # deliberately dirty test inputs
+    "benchmarks/.corpora/*",     # downloaded third-party corpora
+    "docs/cmt005-design.md",     # in-progress design note for the CMT-005 rule
+    ".venv/*",
+    "dist/*",
+]
+
+[tool.lanorme.prose]
+enabled = true
+
+[tool.lanorme.comments]
+em_dash = true
+emoji = true
