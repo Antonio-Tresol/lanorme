@@ -9,8 +9,23 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [0.2.0]
+
 ### Added
 
+- `lanorme rule <CODE>` CLI subcommand. Prints the matching section of
+  `docs/RULES.md` (bundled into the wheel) for one rule code; exits 2
+  with a helpful pointer if the code is unknown.
+- Project metadata for distribution: `authors`, `[project.urls]`
+  (homepage / repository / issues / changelog), `Development Status ::
+  4 - Beta`, Python 3.14 classifier, `Typing :: Typed`, additional
+  keywords.
+- `[dependency-groups] dev = ["pytest>=8"]`: contributors install with
+  `uv sync --group dev` and run the unit suite with
+  `uv run pytest tests/unit`.
+- `[tool.hatch.build.targets.sdist]` selects the publishable artefacts
+  (src, README, CHANGELOG, LICENSE, docs/RULES.md, pyproject) for the
+  source distribution.
 - `security_calls` check, six default-on dangerous-call rules, each one
   AST node and precision-first: `SHELL-001` (subprocess `shell=True`,
   `os.system`, `os.popen`), `DESERIAL-001` (pickle / marshal / dill /
