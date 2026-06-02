@@ -40,6 +40,12 @@ uv run lanorme check .          # dogfood: exits 0 when the tree is clean
 uv build                        # the package still builds
 ```
 
+Or run all three at once:
+
+```console
+scripts/check.sh
+```
+
 `lanorme check .` exits `1` on any failing rule. Advisory warnings (size,
 complexity, and the like) keep the exit code at `0`, but please keep them down:
 fix them by refactoring rather than by suppression where you reasonably can.
