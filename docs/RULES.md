@@ -5,7 +5,7 @@ rule catches, what it does not, where to configure it, and (where the
 rule has a labelled corpus under `tests/fixtures/` and a scorer under
 `benchmarks/`) the measured precision / recall / F1 on that corpus.
 
-Live rule list: `lanorme check . --check=rules` (or `lanorme rules`).
+Live rule list: `lanorme rules`.
 Default policy and per-check configuration: see the README.
 
 The rules are grouped by category in the same order as `lanorme rules`.
@@ -85,16 +85,16 @@ max_block_lines   = 6
 ### `CMT-005`: No comments that restate the next line of code
 
 Default-off. **Experimental.** Lives in its own `restating` check.
-Detector: AST adjacency + 11-category allowlist + stem-equality + 12-entry
-verb-to-AST-node table + asymmetric coverage floor of 1.0 + 4-content-word
-cap. Designed precision-first; expects to miss synonym paraphrases.
+Precision-first by design: it only flags a comment when every content word
+and verb maps onto the adjacent statement, and an allowlist exempts comments
+that carry a why, a caveat, a unit, or a reference. It will miss synonym
+paraphrases. Full design: `docs/cmt005-design.md`.
 
 Measured against the 167-comment corpus under
 `tests/fixtures/comments_restating/` with `benchmarks/score_cmt005.py`:
-**P = 1.000 / R = 0.418 / F1 = 0.589** (TP = 33,
-FP = 0, FN = 46, TN = 88). The 0.418 recall is bounded by the design's
-refusal to chase synonym paraphrases without losing precision; the metric
-is the headline.
+**P = 1.000 / R = 0.418 / F1 = 0.589** (TP = 33, FP = 0, FN = 46, TN = 88).
+The 0.418 recall is bounded by the design's refusal to chase synonym
+paraphrases without losing precision.
 
 Config:
 ```toml
@@ -212,7 +212,7 @@ Config (all keys optional; the defaults are shown):
 # Files allowed to import infrastructure (the composition root).
 # fnmatch globs against the source-relative path, so a module FILE
 # (api/dependencies.py) is recognised, not only a directory.
-composition_root = ["api/dependencies.py", "api/app.py"]
+composition_root = ["api/dependencies/**", "api/v1/dependencies/**", "api/v1/main.py"]
 
 # For layouts whose layers differ. Defaults shown.
 layers = ["domain", "application", "infrastructure", "api"]
@@ -221,9 +221,6 @@ application    = ["domain"]
 infrastructure = ["domain", "application"]
 api            = ["domain", "application"]
 ```
-
-The default `composition_root` is
-`["api/dependencies/**", "api/v1/dependencies/**", "api/v1/main.py"]`.
 
 ---
 
@@ -268,9 +265,10 @@ enabled = true
   that use the same synonym prefixes are flagged and steered to the CRUD
   equivalent. Conflicts with domain-named operations (`approve_loan`,
   `transfer_funds`); off by default.
-- `NAMING-003`: default-on warning. Endpoint handler names should
-  match their HTTP verb (`get_user` on `@router.get`, `delete_user` on
-  `@router.delete`).
+- `NAMING-003`: default-on warning. Endpoint handler names (in files
+  under `api/v1/endpoints/`) should match their HTTP verb (`get_user` on
+  `@router.get`, `delete_user` on `@router.delete`). Health probes and
+  auth-issuance handlers are exempt.
 - `NAMING-004`: default-on warning. Functions whose return annotation
   is `bool` should use a boolean prefix (`is_` / `has_` / `can_` /
   `should_`).
@@ -387,7 +385,8 @@ Each rule has a positive + negative unit test under
   handlers must have an auth dependency (a parameter annotated with
   `Depends(get_current_user)` or `Depends(require_*)`). FastAPI-shaped;
   the rule checks for **authentication presence only**, not
-  authorisation. Exempt endpoints: `login`, `logout`, `refresh`, `token`.
+  authorisation. Only endpoint files under `api/` are scanned. Exempt
+  endpoints: `login`, `logout`, `refresh`, `token`.
 - `SQL-001`: default-on. AST-based: only flags SQL string literals that
   reach a database execution sink (`.execute` / `.executemany` /
   `.executescript` on a DB-shaped receiver, or `read_sql` /
@@ -474,7 +473,7 @@ All default-on. Skips files under `tests/` and `migrations/`.
   in function signatures or return annotations. Pushes toward DTOs,
   TypedDicts, and value objects.
 - `TYPE-002`: bare `dict` / `list` / `tuple` / `set` without type
-  parameters. Equivalent in spirit to ruff `UP006`.
+  parameters.
 - `TYPE-003`: `**kwargs` must be annotated with a concrete type or
   `Unpack[TypedDict]`; bare `**kwargs: Any` is rejected.
 

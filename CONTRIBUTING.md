@@ -22,7 +22,7 @@ You need [`uv`](https://docs.astral.sh/uv/) and Python 3.13 or newer.
 
 ```console
 uv sync --group dev
-uvx pre-commit install     # run the linter and tests on every commit
+uvx pre-commit install     # install the hook; runs the linter and tests on every commit thereafter
 ```
 
 The pre-commit hooks run `lanorme check .` and the unit tests, so a commit only
@@ -35,7 +35,7 @@ stays `pytest`).
 A change is ready when all three pass:
 
 ```console
-uv run pytest tests/unit        # unit tests
+uv run --group dev pytest tests/unit   # unit tests
 uv run lanorme check .          # dogfood: exits 0 when the tree is clean
 uv build                        # the package still builds
 ```
@@ -46,9 +46,10 @@ Or run all three at once:
 scripts/check.sh
 ```
 
-`lanorme check .` exits `1` on any failing rule. Advisory warnings (size,
-complexity, and the like) keep the exit code at `0`, but please keep them down:
-fix them by refactoring rather than by suppression where you reasonably can.
+`lanorme check .` exits `1` on any failing rule. Size and complexity are
+two-tier: they warn at the soft limit (exit `0`) and fail at the hard limit
+(500-line files, 80-line functions, complexity 15, 8 parameters). Keep even the
+warnings down: refactor rather than suppress where you reasonably can.
 
 ## Adding or changing a check
 
@@ -98,9 +99,10 @@ Conventions for a new rule:
   fixture set under `tests/fixtures/` and a scorer under `benchmarks/` that
   reports precision, recall, and F1, so the precision claim is measured.
 - **Stay within the house limits.** LaNorme enforces its own `SIZE` / `PARAM` /
-  `COMPLEXITY` limits on itself: files warn past 300 lines, functions past 50,
-  cyclomatic complexity past 10, parameters past 5. Split helpers out rather
-  than growing one function.
+  `COMPLEXITY` limits on itself: files warn at 300 effective lines and fail at
+  500; functions warn at 50 and fail at 80; complexity warns at 10 and fails at
+  15; parameters warn at 5 and fail at 8 (excluding `self` / `cls`). Split
+  helpers out rather than growing one function.
 
 ## Tests
 

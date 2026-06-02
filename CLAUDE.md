@@ -32,29 +32,24 @@ green PR. Do not finish with a red gate.
 - One category prefix per check. Rule codes (`SQL-001`, `LAYER-005`) are the
   public surface and are stable: renaming or removing one is a breaking change.
 - Put a hard finding in `violations` (fails the run) and an advisory in
-  `warnings` (reports but keeps exit 0). Opinionated or stylistic rules are
-  warnings.
-- Default off when a rule is opinionated or fires often on ordinary code (an
-  `enabled` field defaulting to `False`). Decide the default by measuring on
-  representative third-party code, not only on this repo.
-- A fuzzy heuristic gets a labelled fixture set under `tests/fixtures/` and a
-  scorer under `benchmarks/`.
-- Stay within the house limits LaNorme enforces on itself: files under 300
-  lines, functions under 50, cyclomatic complexity under 10, parameters under 5.
-  Split helpers out rather than growing one function or suppressing the rule.
+  `warnings` (reports but keeps exit 0). Opinionated rules ship default-off (an
+  `enabled` field defaulting to `False`).
+- House limits LaNorme enforces on itself: files warn at 300 / fail at 500
+  lines, functions 50 / 80, complexity 10 / 15, parameters 5 / 8. Split helpers
+  out rather than growing one function.
+
+See `CONTRIBUTING.md` for the full set (corpus discipline for heuristics, how to
+choose a default by measurement, the docs rules).
 
 ## Documentation
 
-Docs state the current truth only. History lives in `CHANGELOG.md`: do not write
-"previously", "was X now Y", or "split out from" in `README.md`, `docs/RULES.md`,
-or docstrings. When you add or change a rule, update its `docs/RULES.md` section
-and the `README.md` rule tables in the same change. The Markdown is linted
-(British spelling, no em dashes, no emoji), so the dogfood will catch slips.
+Docs state current truth only; history lives in `CHANGELOG.md`. Update a rule's
+`docs/RULES.md` section and the `README.md` tables in the same change. Markdown
+is linted (British spelling, no em dashes, no emoji), so the dogfood catches
+slips. See `CONTRIBUTING.md` > Documentation.
 
 ## Releasing
 
 Add a `## [X.Y.Z]` section to `CHANGELOG.md`, then run `scripts/release.sh X.Y.Z`
 (see the `release-lanorme` skill). Creating the GitHub Release auto-publishes to
 PyPI through Trusted Publishing; never run `uv publish` by hand.
-
-See `CONTRIBUTING.md` for the longer version of all of the above.

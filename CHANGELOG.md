@@ -18,10 +18,10 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
   the effective settings for every registered check, then exits without running
   anything. Opt-in checks are listed with their state (for example
   `restating   enabled=False   (opt-in, not enabled)`), which makes it obvious
-  that a default-off check is not silently active. The fast way to debug a
-  config that loaded empty (the most common cause being the
-  `[tool.lanorme.<check>]` vs dedicated-`lanorme.toml` `[<check>]` table-prefix
-  difference).
+  that a default-off check is not silently active. This is the fast way to
+  debug a config that loaded empty: the most common cause is the
+  `[tool.lanorme.<check>]` (in `pyproject.toml`) versus `[<check>]` (in a
+  dedicated `lanorme.toml`) table-prefix difference.
 
 ## [0.5.1]
 

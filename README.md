@@ -1,6 +1,11 @@
 # LaNorme
 
-A linter for Python. It checks the usual things, dead code, file and function
+[![PyPI](https://img.shields.io/pypi/v/lanorme.svg)](https://pypi.org/project/lanorme/)
+[![Python](https://img.shields.io/pypi/pyversions/lanorme.svg)](https://pypi.org/project/lanorme/)
+[![CI](https://github.com/lanorme/lanorme/actions/workflows/ci.yml/badge.svg)](https://github.com/lanorme/lanorme/actions/workflows/ci.yml)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
+A linter for Python. It checks the usual things, commented-out code, file and function
 size, complexity, weak types, hardcoded secrets, dangerous calls, and a few
 things most linters do not: hexagonal layer boundaries, ports-and-adapters
 wiring, and a project's own naming vocabulary.
@@ -28,7 +33,7 @@ uvx lanorme check .
 Or install straight from source:
 
 ```console
-uv tool install "git+https://github.com/lanorme/lanorme@v0.5.1"
+uv tool install "git+https://github.com/lanorme/lanorme@v0.6.0"
 ```
 
 Releases are tagged `vX.Y.Z`; see the [releases page](https://github.com/lanorme/lanorme/releases) for notes.
@@ -37,7 +42,7 @@ Releases are tagged `vX.Y.Z`; see the [releases page](https://github.com/lanorme
 
 ```console
 lanorme check [PATHS...]            # run every enabled check (default path: .)
-lanorme check . --check=secrets     # run one check by name
+lanorme check . --check secrets     # run one check by name
 lanorme check . --select TYPE,AUTHN # only these rule codes or categories
 lanorme check . --ignore NAMING-003 # skip specific rules
 lanorme check . --output-format json
@@ -56,6 +61,7 @@ $ lanorme check src/
   VIOLATION: app.py:8 — Hardcoded credential value bound to 'API_KEY'
     Rule: SECRETPY-001: No hardcoded secrets in source code
     Fix: Read the value from an environment variable, secrets manager, or settings module
+--- secrets: 1 violations, 0 warnings ---
 ```
 
 ### Suppressing a finding
@@ -192,6 +198,6 @@ rule or a new config key with a sensible default is not. Before 1.0, breaking
 changes land in minor releases and are listed in
 [`CHANGELOG.md`](CHANGELOG.md).
 
-## License
+## Licence
 
 MIT. See [`LICENSE`](LICENSE).
