@@ -179,7 +179,8 @@ register(MyCheck())
 
 Drop it in `lanorme/checks/`, ship it under the `lanorme.checks` entry-point
 group, or point at it with `[tool.lanorme] plugins = [...]`. LaNorme finds it
-and runs it.
+and runs it. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the setup, the gates,
+and the conventions for a new rule.
 
 ## Versioning
 
