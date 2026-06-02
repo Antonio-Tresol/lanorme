@@ -1,0 +1,19 @@
+# LaNorme as a pre-commit hook for any project. Add to your .pre-commit-config.yaml:
+#
+#   repos:
+#     - repo: https://github.com/lanorme/lanorme
+#       rev: v0.5.1
+#       hooks:
+#         - id: lanorme
+#
+# LaNorme has project-level rules (layer boundaries, port and test coverage),
+# so it lints the whole tree rather than only the changed files. It reads its
+# configuration from [tool.lanorme] in your pyproject.toml or a lanorme.toml.
+- id: lanorme
+  name: lanorme
+  description: Run the LaNorme architecture and code-quality linter
+  entry: lanorme check
+  language: python
+  types: [python]
+  pass_filenames: false
+  require_serial: true

@@ -22,7 +22,13 @@ You need [`uv`](https://docs.astral.sh/uv/) and Python 3.13 or newer.
 
 ```console
 uv sync --group dev
+uvx pre-commit install     # run the linter and tests on every commit
 ```
+
+The pre-commit hooks run `lanorme check .` and the unit tests, so a commit only
+lands when the tree is LaNorme-compliant. `pre-commit` is fetched on demand with
+`uvx`, so it is not added to the project dependencies (the only dev dependency
+stays `pytest`).
 
 ## The gates
 

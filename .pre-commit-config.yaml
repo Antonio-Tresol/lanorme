@@ -1,0 +1,33 @@
+# LaNorme runs its own linter and unit tests before each commit, so the repo
+# always ships LaNorme-compliant code. Enable it once after cloning:
+#
+#   uvx pre-commit install
+#
+# The lint and test hooks run on the whole tree (LaNorme has project-level
+# rules), only when a Python file is staged.
+repos:
+  - repo: local
+    hooks:
+      - id: lanorme
+        name: lanorme (dogfood)
+        entry: uv run lanorme check .
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+      - id: pytest
+        name: unit tests
+        entry: uv run --group dev pytest tests/unit -q
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
