@@ -9,6 +9,16 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- `streaming` check, `SSE-001`: detects async generator functions used in
+  `StreamingResponse` or `EventSourceResponse` calls that lack both
+  `asyncio.CancelledError` handling and an `await request.is_disconnected()`
+  poll. Generators that do neither will leak the coroutine on every client
+  disconnect. Precision-first: only fires when the async generator is
+  referenced by name in a streaming-response constructor call in the same
+  file. Default-on. Closes #16.
+
 ## [0.7.0]
 
 ### Added
