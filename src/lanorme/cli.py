@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import importlib
+import os
 import pkgutil
 import re
 import sys
@@ -209,6 +210,65 @@ def _apply_filters(
                 violations=violations,
                 warnings=warnings,
             )
+        )
+    return filtered
+
+
+def _resolve_targets(paths: list[str]) -> tuple[Path, list[Path] | None]:
+    """Resolve the CLI path arguments to ``(scan_root, targets)``.
+
+    *scan_root* is the directory checks walk and relativise findings against.
+    *targets* is the requested files/dirs used to narrow findings, or ``None``
+    for a single directory (the whole tree is reported, exactly as before).
+
+    Behind issue #17: ``os.walk`` over a file yields nothing, so a file target
+    made every tree-walking check silently find zero. Instead we walk the file's
+    directory (the scope ``lanorme check <dir>`` already uses) then post-filter.
+    """
+    resolved = [Path(p) for p in paths]
+    for path in resolved:
+        if not path.exists():
+            print(f"ERROR: path '{path}' does not exist.", file=sys.stderr)
+            sys.exit(2)
+
+    if len(resolved) == 1 and resolved[0].is_dir():
+        return resolved[0], None
+
+    try:
+        common = Path(os.path.commonpath([str(p.resolve()) for p in resolved]))
+    except ValueError:
+        print("ERROR: cannot check paths located on different drives.", file=sys.stderr)
+        sys.exit(2)
+    return (common.parent if common.is_file() else common), resolved
+
+
+def _apply_target_filter(
+    *, results: list[CheckResult], scan_root: Path, targets: list[Path] | None
+) -> list[CheckResult]:
+    """Keep only findings for the explicitly requested files/dirs.
+
+    The tree under *scan_root* is walked in full so cross-file checks see the
+    file's directory (the scope a directory target already gives them); this
+    narrows output to the requested paths so a file target reports that file
+    alone. ``None`` (a lone directory request) keeps everything.
+    """
+    if not targets:
+        return results
+
+    files = {t.resolve() for t in targets if t.is_file()}
+    dirs = {t.resolve() for t in targets if t.is_dir()}
+
+    def should_keep(finding: Violation) -> bool:
+        absolute = (scan_root / finding.file).resolve()
+        return absolute in files or any(absolute == d or d in absolute.parents for d in dirs)
+
+    filtered: list[CheckResult] = []
+    for result in results:
+        violations = [v for v in result.violations if should_keep(v)]
+        warnings = [w for w in result.warnings if should_keep(w)]
+        status = Status.FAIL if violations else (Status.WARN if warnings else Status.PASS)
+        filtered.append(
+            CheckResult(check=result.check, status=status, violations=violations, warnings=warnings)
         )
     return filtered
 
@@ -419,8 +479,15 @@ def _build_parser() -> argparse.ArgumentParser:
 # --------------------------------------------------------------------------- #
 
 
-def _run_and_report(*, args: argparse.Namespace, config: dict[str, object], src_root: str) -> None:
+def _run_and_report(
+    *,
+    args: argparse.Namespace,
+    config: dict[str, object],
+    scan_root: Path,
+    targets: list[Path] | None,
+) -> None:
     """Run the selected checks, apply the filters, print, and set the exit code."""
+    src_root = str(scan_root)
     ignore = _csv(args.ignore) or list(config.get("ignore", []))
     exclude = _csv(args.exclude) or list(config.get("exclude", []))
     per_file_ignores = _parse_per_file_ignores(table=config.get("per-file-ignores", {}))
@@ -444,6 +511,10 @@ def _run_and_report(*, args: argparse.Namespace, config: dict[str, object], src_
     # explicit ``--select`` is otherwise honoured, then config ``select``.
     select = implicit_select or _csv(args.select) or list(config.get("select", []))
 
+    # When the request is narrower than the walked tree (a file, or a subset of
+    # paths), keep only findings for the requested targets. A lone directory
+    # request passes ``targets=None`` and this is a no-op.
+    results = _apply_target_filter(results=results, scan_root=scan_root, targets=targets)
     results = _apply_filters(results=results, select=select, ignore=ignore)
     results = _apply_excludes(results=results, exclude=exclude)
     results = _apply_per_file_ignores(results=results, table=per_file_ignores)
@@ -456,12 +527,9 @@ def _run_and_report(*, args: argparse.Namespace, config: dict[str, object], src_
 
 def _command_check(*, args: argparse.Namespace) -> None:
     """Handle the ``check`` subcommand: discover config, then report or run."""
-    target = Path(args.paths[0])
-    if not target.exists():
-        print(f"ERROR: path '{target}' does not exist.", file=sys.stderr)
-        sys.exit(2)
+    scan_root, targets = _resolve_targets(args.paths)
 
-    config, project_root, config_source = _discover_config(start=target)
+    config, project_root, config_source = _discover_config(start=scan_root)
     _load_plugin_modules([*config.get("plugins", []), *args.plugin])
     _apply_check_config(config=config)
 
@@ -469,7 +537,7 @@ def _command_check(*, args: argparse.Namespace) -> None:
         reporting.print_config(config=config, source=config_source, project_root=project_root)
         return
 
-    _run_and_report(args=args, config=config, src_root=str(target))
+    _run_and_report(args=args, config=config, scan_root=scan_root, targets=targets)
 
 
 def main(argv: list[str] | None = None) -> None:

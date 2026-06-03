@@ -30,6 +30,11 @@ def _reset_global_state():
         check = get_check(name)
         if check is not None:
             check.source_root = ""
+    # ``domain_terms`` is a registry singleton whose vocabulary is mutated in
+    # place by ``configure``; clear it so a configured test does not leak rules.
+    domain_terms = get_check("domain_terms")
+    if domain_terms is not None:
+        domain_terms.term_rules = []
 
 
 @pytest.fixture

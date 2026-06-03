@@ -55,6 +55,7 @@ Releases are tagged `vX.Y.Z`; see the [releases page](https://github.com/lanorme
 
 ```console
 lanorme check [PATHS...]              # run every enabled check (default path: .)
+lanorme check src/ app/main.py        # any mix of directories and single files
 lanorme check . --check secrets       # run one check by name
 lanorme check . --check DRY-001       # by rule code or category; runs the check that owns it
 lanorme check . --select TYPE,AUTHN   # only these rule codes or categories

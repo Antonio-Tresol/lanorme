@@ -9,6 +9,23 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Fixed
+
+- `lanorme check <file.py>` (a single-file target, or any subset of paths
+  narrower than a directory) silently reported zero findings while
+  `lanorme check <dir>` on the same tree fired (issue #17). Every tree-walking
+  check iterates a directory, and `os.walk` over a file yields nothing, so the
+  scan found no files at all. A file or multi-path target is now walked through
+  its surrounding directory (so cross-file checks see the same directory scope a
+  directory target already gives them), and the findings are narrowed back to
+  the requested paths. A lone directory target is unchanged. Passing multiple
+  paths now checks all of them rather than only the first, and a path that does
+  not exist still exits `2`. Note: the layout-aware checks (`layer_deps`,
+  `port_coverage`, `test_coverage`) classify by directory layout relative to the
+  scan root, so they report nothing for a single-file target whose parent is not
+  that layout root; run them against a directory (or pass paths that share the
+  project root).
+
 ## [0.9.0]
 
 ### Changed
