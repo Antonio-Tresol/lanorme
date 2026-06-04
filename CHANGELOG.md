@@ -9,6 +9,15 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- A `github` output format (`--output-format github`) that emits GitHub Actions
+  workflow commands, so findings appear inline on the PR diff. It is auto-detected
+  when `GITHUB_ACTIONS` is set, unless an explicit `--output-format` is given. The
+  annotation `title` uses the rule code (`DRY-001`) and the message is escaped, so
+  a rule description or a multi-line message cannot corrupt the annotation
+  (closes #4).
+
 ## [0.10.0]
 
 ### Added

@@ -64,6 +64,7 @@ lanorme check . --exclude 'tests/*'   # skip path globs (comma-separated)
 lanorme check . --output-format ndjson  # one finding per line, for jq / grep
 lanorme check . --output-format json    # one JSON object per check (--json is a shortcut)
 lanorme check . --output-format full    # show passing checks too, not just findings
+lanorme check . --output-format github  # GitHub Actions annotations (auto-detected in CI)
 lanorme check . --plugin my_pkg.rules # load a plugin module that registers checks
 lanorme check . --show-config         # print discovered config + effective settings
 lanorme rules                         # list every registered rule
