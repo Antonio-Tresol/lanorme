@@ -222,11 +222,20 @@ and the conventions for a new rule.
 ## Versioning
 
 The public surface is the rule codes you put in `select` / `ignore` /
-`per-file-ignores` and the config keys under `[tool.lanorme]`. Renaming a rule,
-dropping one, or turning a default-on rule off is a breaking change; adding a
-rule or a new config key with a sensible default is not. Before 1.0, breaking
-changes land in minor releases and are listed in
-[`CHANGELOG.md`](CHANGELOG.md).
+`per-file-ignores` and the config keys under `[tool.lanorme]`. The question that
+decides a version bump is whether a green codebase could go red on upgrade.
+
+- **Patch (`0.y.z`)** keeps every existing codebase's result unchanged: bug
+  fixes, docs, internal changes, and opt-in (default-off) checks or new config
+  keys with safe defaults.
+- **Minor (`0.y.0`)** can newly fail a previously-passing codebase: a new
+  default-on check, an existing default-on rule made stricter, a renamed or
+  removed rule code, or a changed default. Before 1.0, every breaking change
+  lands here.
+- **Major (`1.0.0`)** is the stability commitment. After it, a breaking change
+  bumps the major.
+
+Every change is listed in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence
 

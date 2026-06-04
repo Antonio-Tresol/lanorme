@@ -9,13 +9,26 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [0.9.0]
+
 ### Changed
 
 - `JUNK-001` (stray artifacts) now flags scratch files whose name carries a
   temp or test directory marker (`*tmpdir*`, `*tempdir*`, `*testdir*`,
   `*scratchdir*`), so the `.testdir` / `.pc_tmpdir` files a test harness leaves
   at the repo root are caught. Legitimate extension-less dotfiles such as
-  `.gitignore` are unaffected.
+  `.gitignore` are unaffected. This makes a default-on rule stricter, which is
+  why this is a minor release.
+
+### Docs
+
+- Reworked the public description of LaNorme around executable codebase
+  standards: what it checks (quality, style, architecture, structure), the
+  plugin interface, and gating AI-generated code. README, CONTRIBUTING, the
+  package description, and the repository metadata follow the same framing.
+- Documented the `x.y.z` versioning policy in the README: patch keeps every
+  codebase's result unchanged, minor can newly fail a previously-passing
+  codebase, major is the 1.0 stability commitment.
 
 ## [0.8.0]
 
