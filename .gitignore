@@ -7,3 +7,9 @@ build/
 .ruff_cache/
 .pytest_cache/
 benchmarks/.corpora/
+
+# Local, per-developer Claude guidance (not shared)
+CLAUDE.local.md
+
+# Antigravity CLI per-workspace artifacts
+.antigravitycli/
