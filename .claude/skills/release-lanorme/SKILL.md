@@ -13,10 +13,17 @@ run by hand.
 ## Versioning
 
 The public surface is the rule codes used in `select` / `ignore` /
-`per-file-ignores` and the config keys under `[tool.lanorme]`. Renaming a rule,
-dropping one, or turning a default-on rule off is breaking; adding a rule or a
-config key with a sensible default is not. Before 1.0, breaking changes land in
-minor releases.
+`per-file-ignores` and the config keys under `[tool.lanorme]`. The deciding
+question is whether a green codebase could go red on upgrade:
+
+- patch (`0.y.z`): no existing codebase's result changes (fixes, docs, opt-in
+  checks, new config keys with safe defaults).
+- minor (`0.y.0`): a green codebase can newly fail (a new default-on check, a
+  default-on rule made stricter, a renamed or removed rule code, a changed
+  default). Before 1.0, every breaking change is a minor.
+- major (`1.0.0`): the stability commitment.
+
+The README "Versioning" section is the canonical statement; keep them in step.
 
 ## Steps
 
