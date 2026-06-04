@@ -103,6 +103,39 @@ def test_github_format_violations(capsys):
     assert "::error file=src/foo.py,line=42,title=SQL-001::raw query" in out
 
 
+def test_github_format_title_uses_code_not_full_rule(capsys):
+    # Arrange: a real rule string carrying a ': ' description and a comma, which
+    # would corrupt the comma-separated, '::'-terminated annotation properties.
+    v = Violation(
+        file="src/foo.py",
+        line=9,
+        rule="DRY-001: Near-duplicate function body, refactor",
+        message="duplicate of bar()",
+        fix="extract a helper",
+    )
+
+    # Act.
+    _emit_github(results=[_make_result(violations=[v])])
+
+    # Assert: the title is the bare code; the description never reaches the
+    # annotation, so no stray property or terminator is introduced.
+    out = capsys.readouterr().out
+    assert "title=DRY-001::duplicate of bar()" in out
+    assert "Near-duplicate" not in out
+
+
+def test_github_format_escapes_newlines_in_message(capsys):
+    # Arrange: a multi-line message, which must not break the single-line command.
+    v = Violation(file="a.py", line=1, rule="X-001", message="line one\nline two", fix="f")
+
+    # Act.
+    _emit_github(results=[_make_result(violations=[v])])
+
+    # Assert: the newline is encoded, keeping the command on one line.
+    out = capsys.readouterr().out
+    assert "::error file=a.py,line=1,title=X-001::line one%0Aline two" in out
+
+
 def test_github_format_warnings(capsys):
     # Arrange: a single warning.
     w = Violation(file="src/bar.py", line=7, rule="CMT-001", message="missing docstring", fix="add one")

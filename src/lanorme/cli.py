@@ -468,7 +468,7 @@ def _build_parser() -> argparse.ArgumentParser:
     check.add_argument(
         "--output-format",
         choices=["concise", "full", "json", "ndjson", "github"],
-        default="concise",
+        default=None,
         help=(
             "Output format (default: concise). 'concise' shows only checks with findings plus a "
             "summary; 'full' shows every check; 'json' is one object per check; 'ndjson' is one "
@@ -556,9 +556,7 @@ def _run_and_report(
     ignore = _csv(args.ignore) or list(config.get("ignore", []))
     exclude = _csv(args.exclude) or list(config.get("exclude", []))
     per_file_ignores = _parse_per_file_ignores(table=config.get("per-file-ignores", {}))
-    output_format = "json" if args.json else args.output_format
-    if output_format not in ("json", "ndjson", "github") and os.environ.get("GITHUB_ACTIONS") == "true":
-        output_format = "github"
+    output_format = reporting.resolve_output_format(explicit=args.output_format, as_json=args.json)
 
     # Publish excludes so checks prune them (plus the built-in junk dirs) at
     # walk time, not just in the post-filter below. Always set, even to (), so

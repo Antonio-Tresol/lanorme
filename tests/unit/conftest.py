@@ -14,7 +14,7 @@ from lanorme import discovery, get_check
 
 
 @pytest.fixture(autouse=True)
-def _reset_global_state():
+def _reset_global_state(monkeypatch):
     """Reset process-global state around every test.
 
     Two leaks to guard: the module-global exclude list published by the CLI,
@@ -22,7 +22,13 @@ def _reset_global_state():
     ``_apply_check_config`` mutates in place (the protocol carries no config).
     Either would otherwise bleed from one test into the next in the same
     interpreter.
+
+    Also clear ``GITHUB_ACTIONS`` so the output-format auto-detect is off by
+    default: the suite itself runs inside GitHub Actions, where leaving it set
+    would flip the default format to ``github`` and break tests that parse the
+    human or JSON output. A test that wants the auto-detect sets it explicitly.
     """
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     discovery.set_excludes(())
     yield
     discovery.set_excludes(())

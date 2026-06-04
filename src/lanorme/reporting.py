@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
 import sys
 from importlib.resources import files as _resource_files
 from pathlib import Path
@@ -66,15 +67,40 @@ def _emit_human(*, results: list[CheckResult], show_passed: bool) -> None:
         print(f"Summary: {len(results)} checks — {passed} passed, {warned} warnings, {failed} failed.")
 
 
+def _gh_escape(text: str) -> str:
+    """Escape annotation message data per the GitHub workflow-command spec."""
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 def _emit_github(*, results: list[CheckResult]) -> None:
-    """Emit GitHub Actions workflow commands so findings appear inline on PR diffs."""
+    """Emit GitHub Actions workflow commands so findings appear inline on PR diffs.
+
+    The ``title`` uses the rule *code* (``DRY-001``), not the full rule string:
+    annotation properties are comma-separated and terminated by ``::``, so a
+    title carrying the rule's ``: `` description or a comma would corrupt the
+    annotation. The message keeps its full text with newlines encoded as ``%0A``.
+    """
     for result in results:
         for v in result.violations:
-            msg = v.message.replace("\n", " ")
-            print(f"::error file={v.file},line={v.line},title={v.rule}::{msg}")
+            print(f"::error file={v.file},line={v.line},title={v.code}::{_gh_escape(v.message)}")
         for w in result.warnings:
-            msg = w.message.replace("\n", " ")
-            print(f"::warning file={w.file},line={w.line},title={w.rule}::{msg}")
+            print(f"::warning file={w.file},line={w.line},title={w.code}::{_gh_escape(w.message)}")
+
+
+def resolve_output_format(*, explicit: str | None, as_json: bool) -> str:
+    """Pick the output format: ``--json`` wins, then an explicit ``--output-format``.
+
+    Only an unset format auto-detects, choosing ``github`` inside GitHub Actions
+    (so findings annotate the PR diff) and ``concise`` otherwise. An explicit
+    choice is always honoured, even in CI.
+    """
+    if as_json:
+        return "json"
+    if explicit is not None:
+        return explicit
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return "github"
+    return "concise"
 
 
 def emit(*, results: list[CheckResult], output_format: str) -> None:
