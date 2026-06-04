@@ -22,7 +22,7 @@ wheels = [
 
 [[package]]
 name = "lanorme"
-version = "0.9.1"
+version = "0.10.0"
 source = { editable = "." }
 
 [package.dev-dependencies]
