@@ -207,6 +207,7 @@ class DuplicationCheck:
             try:
                 source = py_file.read_text(encoding="utf-8")
                 tree = ast.parse(source, filename=str(py_file))
+                collected = _collect_functions(tree=tree, relative_file=relative_file)
             except (OSError, UnicodeDecodeError, SyntaxError):
                 warnings.append(
                     Violation(
@@ -218,11 +219,21 @@ class DuplicationCheck:
                     ),
                 )
                 continue
+            except RecursionError:
+                # A deeply nested AST overflows the deepcopy used to normalise a
+                # body. Skip the file rather than crash the whole run.
+                warnings.append(
+                    Violation(
+                        file=relative_file,
+                        line=0,
+                        rule="DRY-000: too deeply nested",
+                        message=f"{py_file.name} is too deeply nested to normalise — skipping",
+                        fix="No action needed; this file is exempt from DRY-001",
+                    ),
+                )
+                continue
 
-            for normalized_hash, location in _collect_functions(
-                tree=tree,
-                relative_file=relative_file,
-            ):
+            for normalized_hash, location in collected:
                 body_groups[normalized_hash].append(location)
 
         violations = _build_violations(groups=body_groups)

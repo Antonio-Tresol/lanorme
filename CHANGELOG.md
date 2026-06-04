@@ -11,6 +11,12 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Fixed
 
+- `DRY-001` (duplication) no longer crashes the whole run on a deeply nested
+  file. Normalising a function body deep-copies its AST, which overflowed the
+  recursion limit and raised `RecursionError` on a pathological file; the file
+  is now skipped with a `DRY-000` warning, mirroring how `SIMILAR-001` already
+  guards itself. Surfaced when a single-file target walks a large surrounding
+  directory.
 - `lanorme check <file.py>` (a single-file target, or any subset of paths
   narrower than a directory) silently reported zero findings while
   `lanorme check <dir>` on the same tree fired (issue #17). Every tree-walking
