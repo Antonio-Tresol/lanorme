@@ -49,7 +49,10 @@ Default-on. Walks every `#` comment and parses its text as Python; if the
 result is one of `_CODE_NODES` (imports, assigns, defs, control flow,
 returns / raises / asserts, ...), the comment is treated as disabled code.
 Guards: comments ending in `.` / `?` / `!` are prose; `foo(...)` (literal
-`...`) is illustrative; `label: type` with no value is documentation.
+`...`) is illustrative; `label: type` with no value is documentation; tooling
+pragmas (`# noqa`, `# type:`, ...) are skipped; and the lines of a
+[PEP 723](https://peps.python.org/pep-0723/) `# /// script` ... `# ///` inline
+metadata block are tooling, not code.
 
 To recover the shapes `ast.parse` rejects standalone, the comment text is
 tried in several wrapping strategies before being declared prose:

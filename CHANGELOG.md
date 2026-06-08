@@ -28,6 +28,15 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - `LAYER-006`: an advisory **warning** when a `transport_layers` entry is not
   among the configured `layers` (and therefore has no effect).
 
+### Fixed
+
+- `CMT-001` no longer flags [PEP 723](https://peps.python.org/pep-0723/) inline
+  script metadata as commented-out code. A line such as
+  `# dependencies = ["rich"]` inside a `# /// script` ... `# ///` block parses as
+  an assignment and was reported as dead code; the block is tooling metadata, so
+  its lines are now exempt (a closing `# ///` fence is required, and genuine
+  commented-out code elsewhere in the file is still flagged).
+
 ## [0.10.0]
 
 ### Added

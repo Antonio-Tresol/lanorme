@@ -210,6 +210,25 @@ def _looks_like_code(*, text: str) -> bool:
     return _comment_parses_as_code(text)
 
 
+# PEP 723 inline script metadata: a ``# /// <type>`` ... ``# ///`` block whose
+# inner lines are ``#`` or ``# <content>``. The body is TOML, so a line like
+# ``# dependencies = ["rich"]`` parses as an assignment and would otherwise be
+# flagged as commented-out code. These lines are tooling metadata, not dead code.
+# This is the reference grammar from PEP 723; without the closing ``# ///`` fence
+# nothing matches, so a stray opener stays lintable.
+_PEP723_BLOCK = re.compile(r"(?m)^# /// [a-zA-Z0-9-]+$\s(?:^#(?: .*)?$\s)*?^# ///$")
+
+
+def _pep723_metadata_lines(source_lines: list[str]) -> frozenset[int]:
+    """Return the 1-based line numbers inside any PEP 723 inline-metadata block."""
+    source = "\n".join(source_lines)
+    flagged: set[int] = set()
+    for match in _PEP723_BLOCK.finditer(source):
+        first = source.count("\n", 0, match.start()) + 1
+        flagged.update(range(first, first + match.group().count("\n") + 1))
+    return frozenset(flagged)
+
+
 def _violation(*, relative_file: str, line: int, code: str, message: str, fix: str) -> Violation:
     return Violation(file=relative_file, line=line, rule=code, message=message, fix=fix)
 
@@ -320,6 +339,7 @@ class CommentsCheck:
     ) -> list[Violation]:
         found: list[Violation] = []
         if self.flag_commented_code:
+            metadata_lines = _pep723_metadata_lines(source_lines)
             found.extend(
                 _violation(
                     relative_file=relative_file,
@@ -329,7 +349,7 @@ class CommentsCheck:
                     fix="Delete it; version control remembers",
                 )
                 for c in comments
-                if _looks_like_code(text=c.text)
+                if c.line not in metadata_lines and _looks_like_code(text=c.text)
             )
         if self.flag_verbose:
             found.extend(self._verbose_violations(comments=comments, relative_file=relative_file))

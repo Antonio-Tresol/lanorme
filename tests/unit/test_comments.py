@@ -89,6 +89,51 @@ def test_cmt001_ignores_prose(check: CommentsCheck, tmp_path: Path):
     assert not result.violations
 
 
+_PEP723_BLOCK = (
+    "# /// script\n"
+    '# requires-python = ">=3.13"\n'
+    '# dependencies = ["requests", "rich"]\n'
+    "# ///\n"
+)
+
+
+def test_cmt001_skips_pep723_inline_metadata(check: CommentsCheck, tmp_path: Path):
+    # Arrange: a PEP 723 block whose `dependencies = [...]` line parses as an
+    # assignment, beside ordinary code.
+    _write(root=tmp_path, name="script.py", body=f"{_PEP723_BLOCK}import sys\n\nprint(sys.argv)\n")
+
+    # Act.
+    result = check.run(src_root=str(tmp_path))
+
+    # Assert: the metadata block is tooling, not commented-out code.
+    assert not any(v.rule == "CMT-001" for v in result.violations)
+
+
+def test_cmt001_still_flags_dead_code_outside_pep723_block(check: CommentsCheck, tmp_path: Path):
+    # Arrange: real commented-out code follows a valid PEP 723 block; the skip
+    # must be scoped to the block, not the rest of the file.
+    _write(root=tmp_path, name="script.py", body=f"{_PEP723_BLOCK}import sys\n\n# y = sys.argv[0]\n")
+
+    # Act.
+    result = check.run(src_root=str(tmp_path))
+
+    # Assert: the block is exempt, the trailing dead-code line is not.
+    flagged = [v for v in result.violations if v.rule == "CMT-001"]
+    assert len(flagged) == 1
+    assert "y = sys.argv[0]" in flagged[0].message
+
+
+def test_pep723_metadata_lines_requires_a_closing_fence():
+    # Arrange: an opener with no `# ///` close is not a metadata block.
+    lines = ['# /// script', '# dependencies = ["rich"]', "import sys"]
+
+    # Act.
+    metadata = comments_module._pep723_metadata_lines(lines)
+
+    # Assert: nothing is treated as metadata, so the deps line stays lintable.
+    assert metadata == frozenset()
+
+
 def test_cmt002_flags_overlong_block(check: CommentsCheck, tmp_path: Path):
     # Arrange: seven consecutive standalone comment lines, one past the limit of six.
     block = "".join(f"# note number {i}\n" for i in range(7))
