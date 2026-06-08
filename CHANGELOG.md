@@ -9,6 +9,8 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [0.11.0]
+
 ### Added
 
 - A `github` output format (`--output-format github`) that emits GitHub Actions
