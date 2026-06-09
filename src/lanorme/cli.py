@@ -23,6 +23,7 @@ import re
 import sys
 import tomllib
 from importlib.metadata import entry_points
+from importlib.resources import files as resource_files
 from pathlib import Path
 
 import lanorme.checks
@@ -54,6 +55,7 @@ from lanorme.regions import (
     combine_results,
     discover_regions,
     is_tree_scoped,
+    merge_config,
     reanchor_results,
     restore_defaults,
     snapshot_defaults,
@@ -136,6 +138,62 @@ def _discover_config(*, start: Path) -> tuple[dict, Path, str | None]:
                 return tool_cfg, directory, f"{pyproject} [tool.lanorme]"
 
     return {}, search_dir, None
+
+
+# --------------------------------------------------------------------------- #
+# Profiles (``extends``)
+# --------------------------------------------------------------------------- #
+
+
+def _bundled_profiles() -> list[str]:
+    """Names of the profiles shipped inside the package."""
+    directory = resource_files("lanorme") / "profiles"
+    return sorted(p.name[: -len(".toml")] for p in directory.iterdir() if p.name.endswith(".toml"))
+
+
+def _load_profile(*, name: str, project_root: Path) -> dict[str, object]:
+    """Load one ``extends`` entry: a local ``.toml`` path or a bundled profile name."""
+    if name.endswith(".toml") or "/" in name or os.sep in name:
+        path = (project_root / name).resolve()
+        if not path.is_file():
+            print(f"ERROR: profile file '{name}' does not exist.", file=sys.stderr)
+            sys.exit(2)
+        with path.open("rb") as fh:
+            return tomllib.load(fh)
+
+    resource = resource_files("lanorme") / "profiles" / f"{name}.toml"
+    if not resource.is_file():
+        available = ", ".join(_bundled_profiles()) or "(none)"
+        print(
+            f"ERROR: unknown profile '{name}'. Bundled profiles: {available}.\n"
+            f"  Use a name, or a path to a .toml file.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    return tomllib.loads(resource.read_text(encoding="utf-8"))
+
+
+def _resolve_extends(*, config: dict[str, object], project_root: Path) -> dict[str, object]:
+    """Expand a top-level ``extends`` into a merged base, with local keys winning.
+
+    ``extends`` is a profile name (or list) or a path to a ``.toml`` file. Profiles
+    are merged left to right, then the file's own keys are merged on top, so the
+    local config always overrides what a profile sets. Profiles are flat: an
+    ``extends`` inside a profile is ignored.
+    """
+    raw = config.get("extends")
+    if not raw:
+        return config
+    names = [raw] if isinstance(raw, str) else list(raw)
+
+    base: dict[str, object] = {}
+    for name in names:
+        profile = _load_profile(name=str(name), project_root=project_root)
+        profile.pop("extends", None)
+        base = merge_config(base=base, override=profile)
+
+    local = {k: v for k, v in config.items() if k != "extends"}
+    return merge_config(base=base, override=local)
 
 
 # --------------------------------------------------------------------------- #
@@ -556,6 +614,7 @@ def _command_check(*, args: argparse.Namespace) -> None:
     scan_root, targets = _resolve_targets(args.paths)
 
     config, project_root, config_source = _discover_config(start=scan_root)
+    config = _resolve_extends(config=config, project_root=project_root)
     _load_plugin_modules([*config.get("plugins", []), *args.plugin])
     # Capture pristine defaults, then reset every check to them before applying
     # config. configure() only ever sets, never resets, so without this a check

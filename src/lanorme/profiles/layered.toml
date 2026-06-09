@@ -1,0 +1,41 @@
+# LaNorme "layered" profile.
+#
+# Adopt with:
+#
+#     [tool.lanorme]
+#     extends = ["layered"]
+#
+# Classic N-tier layered architecture. Layers, top to bottom:
+#
+#     presentation/   controllers, views, request/response handling
+#     business/       services and domain logic
+#     persistence/    repositories and data access
+#
+# Each layer may call the layer(s) below it
+# (presentation -> business -> persistence). Lower layers must never
+# import upward. The rules below are "relaxed": a layer may import from
+# ANY layer beneath it, so presentation may reach persistence directly
+# as well as through business.
+#
+# This profile configures the layer_deps check (a Tier-B, opt-in check),
+# which is what turns it on. There is no port_coverage table: classic
+# layered is not a ports-and-adapters style.
+
+[layer_deps]
+# Ordered layer directory names, outermost first. A file's layer is
+# decided by which of these its path sits under.
+layers = ["presentation", "business", "persistence"]
+
+# Wiring files allowed to cross boundaries. In a classic layered app
+# there is no dependency inversion, so a top-level main.py (which sits
+# OUTSIDE every layer directory and is therefore layer-exempt anyway)
+# is the natural composition root. Note: the composition-root exception
+# only applies to a transport layer, and this profile defines none, so
+# this setting is effectively inert here. It is kept for clarity.
+composition_root = ["main.py"]
+
+[layer_deps.allowed]
+# Each layer lists the layers it MAY import from.
+presentation = ["business", "persistence"]
+business = ["persistence"]
+persistence = []
