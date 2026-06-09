@@ -60,6 +60,7 @@ lanorme check . --check secrets       # run one check by name
 lanorme check . --check DRY-001       # by rule code or category; runs the check that owns it
 lanorme check . --select TYPE,AUTHN   # only these rule codes or categories
 lanorme check . --ignore NAMING-003   # skip specific rules
+lanorme check . --promote TYPE-004    # treat these advisory warnings as build-failing errors
 lanorme check . --exclude 'tests/*'   # skip path globs (comma-separated)
 lanorme check . --output-format ndjson  # one finding per line, for jq / grep
 lanorme check . --output-format json    # one JSON object per check (--json is a shortcut)
@@ -117,6 +118,7 @@ line flags win over both.
 [tool.lanorme]
 select = ["ALL"]                            # rule codes or categories to run
 ignore = ["NAMING-003"]                     # rule codes or categories to skip
+promote = ["TYPE-004"]                      # advisory warnings to treat as build-failing errors
 exclude = ["postman/**", "vendor/*"]        # path globs, pruned at walk time
 source_root = "src/myproject"               # architectural root for layer_deps/port_coverage
 plugins = ["myproject.checks.house_rules"]  # extra check modules to load

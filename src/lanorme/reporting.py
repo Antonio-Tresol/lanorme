@@ -235,7 +235,7 @@ def print_config(*, config: dict[str, object], source: str | None, project_root:
     """Print the discovered config file and the effective settings for every check."""
     print(f"config file:  {source or 'none (built-in defaults)'}")
     print(f"project root: {project_root}")
-    top = [k for k in ("select", "ignore", "exclude", "source_root", "plugins") if k in config]
+    top = [k for k in ("select", "ignore", "promote", "exclude", "source_root", "plugins") if k in config]
     if top or config.get("per-file-ignores"):
         print("\n[tool.lanorme]")
         for key in top:

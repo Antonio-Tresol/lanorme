@@ -171,3 +171,279 @@ def test_type003_concrete_kwargs_is_clean(tmp_path: Path):
     # Assert.
     assert result.status == Status.PASS
     assert not result.violations
+
+
+def _type004(result) -> list:
+    # TYPE-004 is an advisory warning, not a hard failure.
+    return [w for w in result.warnings if w.rule == "TYPE-004"]
+
+
+def test_type004_annotated_param_value_return_is_flagged(tmp_path: Path):
+    # Arrange: the canonical completeness case: an annotated parameter, a real
+    # value return, and no return annotation.
+    (tmp_path / "m.py").write_text(
+        "def first(items: list[int]):\n    return items[0]\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert: advisory warning, so the status is WARN and the build still passes.
+    assert result.status == Status.WARN
+    assert not result.violations
+    hits = _type004(result)
+    assert len(hits) == 1
+    assert "first" in hits[0].message
+
+
+def test_type004_async_awaited_return_is_flagged(tmp_path: Path):
+    # Arrange: an async function returning an awaited value is in scope; nothing
+    # about 'async def' exempts it.
+    (tmp_path / "m.py").write_text(
+        "async def load(key: str):\n    return await store.get(key)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert _type004(result)
+
+
+def test_type004_annotated_vararg_satisfies_param_gate(tmp_path: Path):
+    # Arrange: the only annotated parameter is the vararg, which must count.
+    (tmp_path / "m.py").write_text(
+        "def head(*args: int):\n    return args[0]\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert _type004(result)
+
+
+def test_type004_annotated_kwarg_satisfies_param_gate(tmp_path: Path):
+    # Arrange: the only annotated parameter is the kwarg, which must count.
+    (tmp_path / "m.py").write_text(
+        "def merge(**fields: int):\n    return dict(fields)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert _type004(result)
+
+
+def test_type004_generator_is_exempt(tmp_path: Path):
+    # Arrange: an own-scope yield makes this a generator, which is exempt even
+    # though it has a typed param and a trailing value return.
+    (tmp_path / "m.py").write_text(
+        "def scan(root: str):\n    for p in walk(root):\n        yield p\n    return total\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_nested_yield_does_not_exempt_outer(tmp_path: Path):
+    # Arrange: the yield lives in a nested def, so the outer function is not a
+    # generator and its own-scope value return must flag.
+    (tmp_path / "m.py").write_text(
+        "def outer(x: int):\n    def inner():\n        yield 1\n    return x\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert: the outer flags; the nested 'inner' has no annotated param so it
+    # does not contribute a TYPE-004 of its own.
+    hits = _type004(result)
+    assert len(hits) == 1
+    assert "outer" in hits[0].message
+
+
+def test_type004_nested_only_value_return_does_not_flag_outer(tmp_path: Path):
+    # Arrange: the only value return lives in a nested def; the outer returns
+    # nothing in its own scope.
+    (tmp_path / "m.py").write_text(
+        "def build(spec: str):\n    def make():\n        return spec\n    register(make)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_lambda_body_is_not_an_own_scope_return(tmp_path: Path):
+    # Arrange: the only value-bearing expression is a lambda body, a separate
+    # scope; the outer has no value return.
+    (tmp_path / "m.py").write_text(
+        "def transform(values: list[int]):\n    handler = lambda v: v * 2\n    apply(handler, values)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_self_only_method_does_not_flag(tmp_path: Path):
+    # Arrange: a plain method whose only parameter is the unannotated self.
+    (tmp_path / "m.py").write_text(
+        "class C:\n    def total(self):\n        return self._a + self._b\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_sibling_annotated_param_qualifies_method(tmp_path: Path):
+    # Arrange: self is unannotated but a sibling parameter is annotated, so the
+    # param gate holds.
+    (tmp_path / "m.py").write_text(
+        "class C:\n    def status_of(self, code: int):\n        if code == 200:\n            return True\n        return False\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert _type004(result)
+
+
+def test_type004_return_none_literal_does_not_flag(tmp_path: Path):
+    # Arrange: the only return is the literal None, which is not a real value.
+    (tmp_path / "m.py").write_text(
+        "def reset(state: dict[str, int]):\n    state.clear()\n    return None\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_bare_return_does_not_flag(tmp_path: Path):
+    # Arrange: the only return is bare, which carries no value.
+    (tmp_path / "m.py").write_text(
+        "def log_event(message: str):\n    write(message)\n    return\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_false_and_notimplemented_are_real_values(tmp_path: Path):
+    # Arrange: returning False (and NotImplemented) counts as a real value; the
+    # literal-None exclusion must not swallow other constants.
+    (tmp_path / "m.py").write_text(
+        "class C:\n    def __exit__(self, exc_type: type, exc: BaseException, tb: object):\n"
+        "        self._closed = True\n        return False\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert _type004(result)
+
+
+def test_type004_overload_stub_does_not_flag(tmp_path: Path):
+    # Arrange: an @overload stub with a '...' body returns no value and so falls
+    # out naturally without special-casing the decorator.
+    (tmp_path / "m.py").write_text(
+        "from typing import overload\n\n\nclass C:\n    @overload\n    def f(self, x: int): ...\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_abstractmethod_raise_only_does_not_flag(tmp_path: Path):
+    # Arrange: an @abstractmethod stub that only raises returns no value.
+    (tmp_path / "m.py").write_text(
+        "from abc import abstractmethod\n\n\nclass C:\n    @abstractmethod\n"
+        "    def area(self, scale: float):\n        raise NotImplementedError\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_existing_return_annotation_is_out_of_scope(tmp_path: Path):
+    # Arrange: a '-> None' is still a return annotation, so condition one fails.
+    (tmp_path / "m.py").write_text(
+        "def log(self, msg: str) -> None:\n    return print(msg)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_unannotated_params_do_not_flag(tmp_path: Path):
+    # Arrange: a real value return but no annotated parameter at all.
+    (tmp_path / "m.py").write_text(
+        "def describe(value):\n    return repr(value)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert not _type004(result)
+
+
+def test_type004_generator_expression_return_flags(tmp_path: Path):
+    # Arrange: a returned generator expression is a separate code object; the
+    # enclosing function has no own-scope yield and returns a real object.
+    (tmp_path / "m.py").write_text(
+        "def make_gen(seq: list[int]):\n    return (x * 2 for x in seq)\n",
+        encoding="utf-8",
+    )
+
+    # Act.
+    result = StrongTypesCheck().run(src_root=str(tmp_path))
+
+    # Assert.
+    assert _type004(result)

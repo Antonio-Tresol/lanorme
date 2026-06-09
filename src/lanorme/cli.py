@@ -40,6 +40,14 @@ from lanorme import (
     run_check,
 )
 from lanorme.discovery import set_excludes
+from lanorme.filtering import (
+    _apply_noqa,
+    _apply_promotions,
+    _category,
+    _keep,
+    _matches,
+    _rule_code,
+)
 from lanorme.regions import (
     Region,
     child_exclude_globs,
@@ -50,8 +58,6 @@ from lanorme.regions import (
     restore_defaults,
     snapshot_defaults,
 )
-
-_CODE_RE = re.compile(r"^([A-Z]+)-\d+")
 
 # Top-level ``source_root`` is injected into these two layout-aware checks only;
 # every other check scans the full target tree.
@@ -137,17 +143,6 @@ def _discover_config(*, start: Path) -> tuple[dict, Path, str | None]:
 # --------------------------------------------------------------------------- #
 
 
-def _rule_code(rule: str) -> str:
-    """Extract the rule code (e.g. 'LAYER-002') from a rule string."""
-    return rule.split(":", 1)[0].strip().split()[0]
-
-
-def _category(code: str) -> str:
-    """The category prefix of a code, e.g. 'LAYER' from 'LAYER-002'."""
-    match = _CODE_RE.match(code)
-    return match.group(1) if match else code
-
-
 def _checks_for_selector(*, selector: str) -> list[Check]:
     """Return the checks that own a rule whose code or category matches *selector*."""
     wanted = selector.upper()
@@ -185,18 +180,6 @@ def _resolve_single(*, selector: str, src_root: str) -> tuple[list[CheckResult],
         file=sys.stderr,
     )
     sys.exit(2)
-
-
-def _matches(*, code: str, patterns: list[str]) -> bool:
-    """True if *code* matches any selector (exact code, category, or 'ALL')."""
-    category = _category(code)
-    return any(p == "ALL" or p == code or p == category for p in patterns)
-
-
-def _keep(*, rule: str, select: list[str], ignore: list[str]) -> bool:
-    code = _rule_code(rule)
-    selected = not select or _matches(code=code, patterns=select)
-    return selected and not _matches(code=code, patterns=ignore)
 
 
 def _apply_filters(
@@ -355,63 +338,6 @@ def _apply_per_file_ignores(
     return filtered
 
 
-_NOQA_RE = re.compile(r"#\s*noqa(?:\s*:\s*([A-Za-z0-9_,\-\s]+))?", re.IGNORECASE)
-
-
-def _noqa_silences(*, line: str, rule: str) -> bool:
-    """True if *line* carries a ``# noqa`` comment that covers *rule*."""
-    match = _NOQA_RE.search(line)
-    if match is None:
-        return False
-    if match.group(1) is None:
-        return True  # bare `# noqa` silences any rule on this line
-    codes = [c.strip() for c in match.group(1).split(",") if c.strip()]
-    code = _rule_code(rule)
-    return _matches(code=code, patterns=codes)
-
-
-def _line_at(*, project_root: Path, file: str, line: int, cache: dict[str, list[str]]) -> str:
-    """Read source line *line* from *file*, caching the file's lines for the run."""
-    key = file.replace("\\", "/")
-    lines = cache.get(key)
-    if lines is None:
-        path = project_root / file
-        try:
-            lines = path.read_text(encoding="utf-8").splitlines()
-        except (OSError, UnicodeDecodeError):
-            lines = []
-        cache[key] = lines
-    if not lines or line <= 0 or line > len(lines):
-        return ""
-    return lines[line - 1]
-
-
-def _apply_noqa(*, results: list[CheckResult], project_root: Path) -> list[CheckResult]:
-    """Drop violations/warnings whose source line carries a covering ``# noqa`` comment."""
-    cache: dict[str, list[str]] = {}
-
-    def should_keep(violation: Violation) -> bool:
-        line = _line_at(
-            project_root=project_root, file=violation.file, line=violation.line, cache=cache
-        )
-        return not _noqa_silences(line=line, rule=violation.rule)
-
-    filtered: list[CheckResult] = []
-    for result in results:
-        violations = [v for v in result.violations if should_keep(v)]
-        warnings = [w for w in result.warnings if should_keep(w)]
-        status = Status.FAIL if violations else (Status.WARN if warnings else Status.PASS)
-        filtered.append(
-            CheckResult(
-                check=result.check,
-                status=status,
-                violations=violations,
-                warnings=warnings,
-            )
-        )
-    return filtered
-
-
 # --------------------------------------------------------------------------- #
 # Output helpers
 # --------------------------------------------------------------------------- #
@@ -419,6 +345,20 @@ def _apply_noqa(*, results: list[CheckResult], project_root: Path) -> list[Check
 
 def _csv(value: str | None) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()] if value else []
+
+
+def _config_list(value: object) -> list[str]:
+    """Normalise a config selector value to a list of strings.
+
+    Accepts a list (``promote = ["TYPE-004"]``) or a bare string
+    (``promote = "ALL"``); anything else yields ``[]``. Whitespace and case are
+    handled downstream by ``_matches``, matching the CLI ``_csv`` path.
+    """
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    return []
 
 
 def _parse_per_file_ignores(*, table: object) -> dict[str, list[str]]:
@@ -459,6 +399,11 @@ def _build_parser() -> argparse.ArgumentParser:
     check.add_argument("--select", default=None, help="Comma-separated rule codes/categories to run.")
     check.add_argument("--ignore", default=None, help="Comma-separated rule codes/categories to skip.")
     check.add_argument("--exclude", default=None, help="Comma-separated file-path globs to exclude.")
+    check.add_argument(
+        "--promote",
+        default=None,
+        help="Comma-separated rule codes/categories whose warnings become build-failing errors (or ALL).",
+    )
     check.add_argument(
         "--show-config",
         action="store_true",
@@ -553,8 +498,9 @@ def _run_and_report(
 ) -> None:
     """Run the selected checks, apply the filters, print, and set the exit code."""
     src_root = str(scan_root)
-    ignore = _csv(args.ignore) or list(config.get("ignore", []))
-    exclude = _csv(args.exclude) or list(config.get("exclude", []))
+    ignore = _csv(args.ignore) or _config_list(config.get("ignore"))
+    exclude = _csv(args.exclude) or _config_list(config.get("exclude"))
+    promote = _csv(args.promote) or _config_list(config.get("promote"))
     per_file_ignores = _parse_per_file_ignores(table=config.get("per-file-ignores", {}))
     output_format = reporting.resolve_output_format(explicit=args.output_format, as_json=args.json)
 
@@ -585,7 +531,7 @@ def _run_and_report(
 
     # A code-form ``--check`` (e.g. DRY-001) narrows output to that code; an
     # explicit ``--select`` is otherwise honoured, then config ``select``.
-    select = implicit_select or _csv(args.select) or list(config.get("select", []))
+    select = implicit_select or _csv(args.select) or _config_list(config.get("select"))
 
     # When the request is narrower than the walked tree (a file, or a subset of
     # paths), keep only findings for the requested targets. A lone directory
@@ -598,6 +544,7 @@ def _run_and_report(
     results = _apply_excludes(results=results, exclude=exclude)
     results = _apply_per_file_ignores(results=results, table=per_file_ignores)
     results = _apply_noqa(results=results, project_root=project_root)
+    results = _apply_promotions(results=results, promote=promote)
     reporting.emit(results=results, output_format=output_format)
 
     if any(r.status == Status.FAIL for r in results):

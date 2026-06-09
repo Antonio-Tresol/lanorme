@@ -555,9 +555,10 @@ exclude    = ["sandbox"]           # extra directories to skip entirely
 
 ---
 
-## Strong types: `TYPE-001..003`
+## Strong types: `TYPE-001..004`
 
-All default-on. Skips files under `tests/` and `migrations/`.
+Default-on. Skips files under `tests/` and `migrations/`. `TYPE-001..003` are
+build-failing; `TYPE-004` is an advisory warning.
 
 - `TYPE-001`: `dict[str, Any]` (and other weakly-typed dict containers)
   in function signatures or return annotations. Pushes toward DTOs,
@@ -566,6 +567,13 @@ All default-on. Skips files under `tests/` and `migrations/`.
   parameters.
 - `TYPE-003`: `**kwargs` must be annotated with a concrete type or
   `Unpack[TypedDict]`; bare `**kwargs: Any` is rejected.
+- `TYPE-004` (advisory warning): a function with at least one annotated
+  parameter that returns a real value in its own scope should also declare a
+  return type. This is the high-signal completeness subset of ruff's `ANN`,
+  not blanket presence enforcement: it fires only when the parameters are
+  already typed and a value escapes, so a fully untyped function or a procedure
+  that returns nothing is left alone. Generators (own-scope `yield`) are exempt;
+  returns inside a nested `def` or `lambda` do not count.
 
 ---
 
