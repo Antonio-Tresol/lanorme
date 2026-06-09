@@ -30,7 +30,7 @@ transport_layers = ["api"]
 # The wiring file allowed to cross into infrastructure. Globs are fnmatch-ed
 # against the source-root-relative path, so a single module FILE is matched, not
 # only a directory.
-composition_root = ["api/dependencies.py", "api/main.py"]
+composition_root = ["api/dependencies.py", "api/dependencies/*", "api/main.py", "main.py"]
 
 [layer_deps.allowed]
 domain = []
@@ -41,4 +41,4 @@ api = ["domain", "application"]
 [port_coverage]
 ports_dir = "application/ports"
 adapter_roots = ["infrastructure"]
-composition_root = ["api/dependencies.py", "api/main.py"]
+composition_root = ["api/dependencies.py", "api/dependencies/*", "api/main.py", "main.py"]

@@ -37,6 +37,7 @@ from __future__ import annotations
 import copy
 import os
 import tomllib
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -118,7 +119,12 @@ def _nearest_ancestor(*, directory: Path, candidates: list[Region]) -> Region | 
     return best
 
 
-def discover_regions(*, scan_root: Path, root_config: Config) -> list[Region]:
+def discover_regions(
+    *,
+    scan_root: Path,
+    root_config: Config,
+    resolve_extends: Callable[..., Config] | None = None,
+) -> list[Region]:
     """Resolve the tree under *scan_root* into config regions, root region first.
 
     The root region is *scan_root* under *root_config* (already discovered by the
@@ -126,6 +132,11 @@ def discover_regions(*, scan_root: Path, root_config: Config) -> list[Region]:
     carry their own config file, with default-pruned directories skipped. Each
     region's ``merged`` config folds its ancestor chain top-down, stopping at the
     nearest ``root = true``.
+
+    *resolve_extends*, when supplied, expands each nested region's ``extends`` the
+    same way the CLI expands the root's, relative to the region's own directory,
+    so a subtree can adopt a profile. The root config is already resolved by the
+    caller.
     """
     scan_root = scan_root.resolve()
     regions = [Region(directory=scan_root, raw=root_config)]
@@ -137,6 +148,8 @@ def discover_regions(*, scan_root: Path, root_config: Config) -> list[Region]:
             continue
         config = load_lanorme_config(here)
         if config:
+            if resolve_extends is not None:
+                config = resolve_extends(config=config, project_root=here)
             regions.append(Region(directory=here, raw=config))
 
     regions.sort(key=lambda region: len(region.directory.parts))
