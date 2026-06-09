@@ -1,0 +1,33 @@
+# LaNorme "strict" profile.
+#
+# Adopt with:
+#
+#     [tool.lanorme]
+#     extends = ["strict"]
+#
+# It turns on every opt-in (default-off) check and promotes all advisory
+# warnings to build-failing errors, so the build bites on anything the linter
+# can flag. Your own [tool.lanorme] keys still override what this profile sets.
+
+# Every warning (advisory rules such as TYPE-004 and SIMILAR-001, plus the
+# size and placeholder-type warnings) becomes a build-failing error.
+promote = ["ALL"]
+
+# Opt-in generic checks, switched on.
+[named_args]
+enabled = true
+
+[test_style]
+enabled = true
+
+[attribute_access]
+enabled = true
+
+[restating]
+enabled = true
+
+[similarity]
+enabled = true
+
+[prose]
+enabled = true

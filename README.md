@@ -116,6 +116,7 @@ line flags win over both.
 
 ```toml
 [tool.lanorme]
+extends = ["strict", "hexagonal"]           # adopt bundled profiles (or .toml paths); local keys win
 select = ["ALL"]                            # rule codes or categories to run
 ignore = ["NAMING-003"]                     # rule codes or categories to skip
 promote = ["TYPE-004"]                      # advisory warnings to treat as build-failing errors
@@ -142,6 +143,24 @@ id = "TERM-001"
 canonical = "Account"
 forbidden = ["Acct", "Acnt"]
 ```
+
+### Profiles (`extends`)
+
+`extends` adopts a ready-made configuration. List a bundled profile by name, or
+a path to a local `.toml`; entries merge left to right and your own
+`[tool.lanorme]` keys are merged on top, so the local config always wins.
+
+| Profile | What it sets |
+|---|---|
+| `strict` | Turns on every opt-in check and promotes all warnings to build-failing errors. |
+| `hexagonal` | Ports-and-adapters `layer_deps` boundaries (domain / application / infrastructure / api) plus `port_coverage`. |
+| `clean` | Clean Architecture layers (entities / use_cases / interface_adapters / frameworks), dependencies pointing inward. |
+| `layered` | Classic N-tier (presentation / business / persistence), each layer depending only downward. |
+
+Compose them, for example `extends = ["strict", "hexagonal"]`, and override any
+individual key locally. The architecture profiles assume the conventional
+directory names; set `source_root` if your package is nested, or copy a profile
+into a local `.toml` and adjust the layer names to match your tree.
 
 `exclude` globs are pruned during the walk, not just filtered from output, so a
 large excluded subtree is never read. A built-in set of never-source

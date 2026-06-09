@@ -11,6 +11,14 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ### Added
 
+- Config profiles via `[tool.lanorme] extends`. Adopt a shipped preset by name,
+  or a local `.toml` by path, and its keys merge underneath your own (local
+  always wins). Bundled profiles: `strict` (turns on every opt-in check and
+  promotes all warnings to errors) and the architecture presets `hexagonal`,
+  `clean`, and `layered` (preset `layer_deps` boundaries, and ports-and-adapters
+  coverage for `hexagonal`). Compose them, for example
+  `extends = ["strict", "hexagonal"]`. Closes #19.
+
 - Promote advisory warnings to build-failing errors with `[tool.lanorme] promote`
   (or `--promote`). List a rule code, a category, or `ALL`, and matching
   warnings become violations that fail the run. This lets heuristic rules ship

@@ -1,0 +1,44 @@
+# LaNorme "hexagonal" profile.
+#
+# Adopt with:
+#
+#     [tool.lanorme]
+#     extends = ["hexagonal"]
+#
+# Ports and adapters (hexagonal) architecture. It enforces the inward-only
+# dependency rule across four layers and, because this style is built around
+# ports, also turns on port coverage so every adapter is wired to a port
+# Protocol. Both checks are opt-in (default-off) and inert until configured;
+# extending this profile is what switches them on. Your own [tool.lanorme]
+# keys still override anything this profile sets.
+#
+# Layers (inner to outer):
+#   domain          pure business model; depends on nothing in the tree
+#   application     use-cases; depends on domain; defines the ports
+#   infrastructure  adapters implementing the ports; depends on domain + application
+#   api             transport / entrypoints; depends on application + domain
+#
+# The composition root (api/dependencies.py) is the one wiring file allowed to
+# reach into infrastructure to bind ports to their adapters.
+
+[layer_deps]
+layers = ["domain", "application", "infrastructure", "api"]
+
+# api is the transport (inbound adapter) layer that hosts the composition root.
+transport_layers = ["api"]
+
+# The wiring file allowed to cross into infrastructure. Globs are fnmatch-ed
+# against the source-root-relative path, so a single module FILE is matched, not
+# only a directory.
+composition_root = ["api/dependencies.py", "api/main.py"]
+
+[layer_deps.allowed]
+domain = []
+application = ["domain"]
+infrastructure = ["domain", "application"]
+api = ["domain", "application"]
+
+[port_coverage]
+ports_dir = "application/ports"
+adapter_roots = ["infrastructure"]
+composition_root = ["api/dependencies.py", "api/main.py"]

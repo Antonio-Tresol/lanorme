@@ -1,0 +1,43 @@
+# LaNorme "clean" profile (Clean Architecture, Robert C. Martin).
+#
+# Adopt with:
+#
+#     [tool.lanorme]
+#     extends = ["clean"]
+#
+# It turns on the layer_deps check configured for Clean Architecture's
+# Dependency Rule: source code dependencies point strictly inward. Your own
+# [tool.lanorme] keys still override what this profile sets.
+#
+# Layers, outermost to innermost:
+#     frameworks         - web, database and external interfaces (drivers, I/O)
+#     interface_adapters - controllers, presenters and gateways
+#     use_cases          - application business rules
+#     entities           - enterprise business rules (depend on nothing)
+#
+# The Dependency Rule: an inner layer must never know about an outer one.
+# Each outer layer may therefore import every layer inside it, and entities
+# import none of the others. There is no port_coverage table: Clean does not
+# mandate the ports_dir / adapter_roots layout that port_coverage enforces.
+#
+# Lay your source out with these directory names as the architectural roots,
+# for example  entities/, use_cases/, interface_adapters/, frameworks/. If they
+# sit under a nested package, set [tool.lanorme] source_root so the layers are
+# classified relative to it.
+
+[layer_deps]
+layers = ["entities", "use_cases", "interface_adapters", "frameworks"]
+
+# The composition root in Clean Architecture is the outermost frameworks layer
+# (main / the "main" component), which wires the inner layers together. It is
+# listed for documentation; the frameworks layer already imports every inner
+# layer through the allowed rules below, so no special exception is needed.
+composition_root = ["frameworks/main.py", "main.py"]
+
+# Allowed import targets per layer. The check does not compute a transitive
+# closure, so each outer layer enumerates every layer inside it explicitly.
+[layer_deps.allowed]
+entities = []
+use_cases = ["entities"]
+interface_adapters = ["use_cases", "entities"]
+frameworks = ["interface_adapters", "use_cases", "entities"]
