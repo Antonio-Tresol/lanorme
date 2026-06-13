@@ -217,6 +217,34 @@ anchored to the root:
 A run with no nested config behaves exactly as before, and `--check NAME` uses
 the root config (cascading applies to a full run).
 
+## Adopting LaNorme on an existing codebase
+
+A mature codebase will have findings on day one, and a wall of warnings nobody
+caused this week is noise that hides the warning that matters. A baseline records
+the debt you already have so that only *new* findings report. The whole adoption
+is two commands:
+
+```console
+lanorme baseline write
+```
+
+This records the current findings to `lanorme-baseline.json`. Add the printed key
+to your config and commit the file like a lockfile:
+
+```toml
+[tool.lanorme]
+extends = ["strict"]
+baseline = "lanorme-baseline.json"
+```
+
+From now on every check runs at full strictness, but the recorded findings are
+held back; only what you add reports. The baseline is content-anchored, so an
+entry survives edits above it, and a recorded *warning* never hides a finding
+that has since crossed a hard threshold: debt that gets worse still fails. Run
+`lanorme check --no-baseline` to see the whole debt, and `lanorme baseline status`
+to list entries that no longer match anything (paid-down debt); `lanorme baseline
+write` again prunes them.
+
 ## What it checks
 
 `lanorme rules` prints the live list. [`docs/RULES.md`](docs/RULES.md) documents

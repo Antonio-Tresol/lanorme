@@ -9,6 +9,27 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Added
+
+- A warning baseline for adopting LaNorme on an existing codebase. `lanorme
+  baseline write` records the current findings to `lanorme-baseline.json`; with
+  `[tool.lanorme] baseline = "lanorme-baseline.json"` set, those findings are
+  suppressed and only new ones report (and compose with `promote`). Matching is
+  content-anchored, so an entry survives edits above it; a recorded warning never
+  suppresses a finding that has escalated to error-tier; and a per-key count
+  guarantees new debt always surfaces. `lanorme check --no-baseline` reports the
+  whole debt and `lanorme baseline status` lists stale entries. See the README,
+  "Adopting LaNorme on an existing codebase".
+
+### Changed
+
+- NAMING-004 no longer fires on boolean `@property` / `@cached_property` /
+  `@staticmethod` accessors or on `Protocol` members, and its fix suggestion
+  strips a leading verb (so `check_auth_posture` suggests `is_auth_posture`).
+- SIZE-002 counts effective (non-blank, non-comment) lines for a function,
+  matching SIZE-001, so adding an explanatory comment cannot push a function
+  over the limit.
+
 ## [0.12.0]
 
 ### Added

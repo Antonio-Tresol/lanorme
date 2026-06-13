@@ -15,24 +15,23 @@ Configuration is discovered by walking up from the target path: a dedicated
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import importlib
 import os
 import pkgutil
 import re
 import sys
 import tomllib
+from dataclasses import dataclass
 from importlib.metadata import entry_points
 from pathlib import Path
 
 import lanorme.checks
-from lanorme import reporting
+from lanorme import baseline, reporting
 from lanorme import (
     Check,
     CheckResult,
     Configurable,
     Status,
-    Violation,
     __version__,
     get_all_checks,
     get_check,
@@ -41,11 +40,13 @@ from lanorme import (
 )
 from lanorme.discovery import set_excludes
 from lanorme.filtering import (
+    _apply_excludes,
+    _apply_filters,
     _apply_noqa,
+    _apply_per_file_ignores,
     _apply_promotions,
+    _apply_target_filter,
     _category,
-    _keep,
-    _matches,
     _rule_code,
 )
 from lanorme.presets import _resolve_extends
@@ -183,32 +184,6 @@ def _resolve_single(*, selector: str, src_root: str) -> tuple[list[CheckResult],
     sys.exit(2)
 
 
-def _apply_filters(
-    *,
-    results: list[CheckResult],
-    select: list[str],
-    ignore: list[str],
-) -> list[CheckResult]:
-    """Drop violations/warnings whose rule code is deselected, recompute status."""
-    if not select and not ignore:
-        return results
-
-    filtered: list[CheckResult] = []
-    for result in results:
-        violations = [v for v in result.violations if _keep(rule=v.rule, select=select, ignore=ignore)]
-        warnings = [w for w in result.warnings if _keep(rule=w.rule, select=select, ignore=ignore)]
-        status = Status.FAIL if violations else (Status.WARN if warnings else Status.PASS)
-        filtered.append(
-            CheckResult(
-                check=result.check,
-                status=status,
-                violations=violations,
-                warnings=warnings,
-            )
-        )
-    return filtered
-
-
 def _resolve_targets(paths: list[str]) -> tuple[Path, list[Path] | None]:
     """Resolve the CLI path arguments to ``(scan_root, targets)``.
 
@@ -235,108 +210,6 @@ def _resolve_targets(paths: list[str]) -> tuple[Path, list[Path] | None]:
         print("ERROR: cannot check paths located on different drives.", file=sys.stderr)
         sys.exit(2)
     return (common.parent if common.is_file() else common), resolved
-
-
-def _apply_target_filter(
-    *, results: list[CheckResult], scan_root: Path, targets: list[Path] | None
-) -> list[CheckResult]:
-    """Keep only findings for the explicitly requested files/dirs.
-
-    The tree under *scan_root* is walked in full so cross-file checks see the
-    file's directory (the scope a directory target already gives them); this
-    narrows output to the requested paths so a file target reports that file
-    alone. ``None`` (a lone directory request) keeps everything.
-    """
-    if not targets:
-        return results
-
-    files = {t.resolve() for t in targets if t.is_file()}
-    dirs = {t.resolve() for t in targets if t.is_dir()}
-
-    def should_keep(finding: Violation) -> bool:
-        absolute = (scan_root / finding.file).resolve()
-        return absolute in files or any(absolute == d or d in absolute.parents for d in dirs)
-
-    filtered: list[CheckResult] = []
-    for result in results:
-        violations = [v for v in result.violations if should_keep(v)]
-        warnings = [w for w in result.warnings if should_keep(w)]
-        status = Status.FAIL if violations else (Status.WARN if warnings else Status.PASS)
-        filtered.append(
-            CheckResult(check=result.check, status=status, violations=violations, warnings=warnings)
-        )
-    return filtered
-
-
-def _path_excluded(*, path: str, patterns: list[str]) -> bool:
-    normalised = path.replace("\\", "/")
-    return any(fnmatch.fnmatch(normalised, pattern) for pattern in patterns)
-
-
-def _apply_excludes(*, results: list[CheckResult], exclude: list[str]) -> list[CheckResult]:
-    """Drop violations/warnings whose file path matches an exclude glob."""
-    if not exclude:
-        return results
-
-    filtered: list[CheckResult] = []
-    for result in results:
-        violations = [v for v in result.violations if not _path_excluded(path=v.file, patterns=exclude)]
-        warnings = [w for w in result.warnings if not _path_excluded(path=w.file, patterns=exclude)]
-        status = Status.FAIL if violations else (Status.WARN if warnings else Status.PASS)
-        filtered.append(
-            CheckResult(
-                check=result.check,
-                status=status,
-                violations=violations,
-                warnings=warnings,
-            )
-        )
-    return filtered
-
-
-def _per_file_silences(
-    *, file: str, rule: str, table: dict[str, list[str]]
-) -> bool:
-    """True if *rule* (full code or category) is silenced for *file* by *table*."""
-    code = _rule_code(rule)
-    normalised = file.replace("\\", "/")
-    for pattern, codes in table.items():
-        if not fnmatch.fnmatch(normalised, pattern):
-            continue
-        if _matches(code=code, patterns=codes):
-            return True
-    return False
-
-
-def _apply_per_file_ignores(
-    *,
-    results: list[CheckResult],
-    table: dict[str, list[str]],
-) -> list[CheckResult]:
-    """Drop violations whose ``(file, rule)`` pair is silenced by the per-file-ignores table."""
-    if not table:
-        return results
-
-    filtered: list[CheckResult] = []
-    for result in results:
-        violations = [
-            v for v in result.violations
-            if not _per_file_silences(file=v.file, rule=v.rule, table=table)
-        ]
-        warnings = [
-            w for w in result.warnings
-            if not _per_file_silences(file=w.file, rule=w.rule, table=table)
-        ]
-        status = Status.FAIL if violations else (Status.WARN if warnings else Status.PASS)
-        filtered.append(
-            CheckResult(
-                check=result.check,
-                status=status,
-                violations=violations,
-                warnings=warnings,
-            )
-        )
-    return filtered
 
 
 # --------------------------------------------------------------------------- #
@@ -422,6 +295,19 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     check.add_argument("--json", action="store_true", help="Alias for --output-format=json.")
+    check.add_argument(
+        "--no-baseline",
+        action="store_true",
+        help="Ignore the configured baseline for this run (report the whole debt).",
+    )
+
+    bl = sub.add_parser("baseline", help="Record or inspect the warning baseline.")
+    bl.add_argument(
+        "action",
+        choices=["write", "status"],
+        help="'write' records current findings; 'status' lists stale entries.",
+    )
+    bl.add_argument("paths", nargs="*", default=["."], help="Project root to scan (default: .)")
 
     sub.add_parser("rules", help="List all registered rules and exit.")
 
@@ -488,6 +374,74 @@ def _run_regions(
     return [by_name[name] for name in checks if name in by_name]
 
 
+@dataclass(frozen=True)
+class _Filters:
+    """The result-narrowing inputs a run applies (CLI value or config fallback)."""
+
+    single: str | None
+    select: list[str]
+    ignore: list[str]
+    exclude: list[str]
+
+
+def _collect_results(
+    *,
+    config: dict[str, object],
+    scan_root: Path,
+    project_root: Path,
+    targets: list[Path] | None,
+    pristine: dict[str, object],
+    filters: _Filters,
+) -> list[CheckResult] | None:
+    """Run the checks and apply every filter up to (and including) ``# noqa``.
+
+    This is the shared spine of ``check``, ``baseline write`` and ``baseline
+    status``: all three must see byte-identical findings through an identical
+    path, or recorded anchors would not line up with checked ones. The baseline
+    hook and promotion run after this, on the returned project-root-relative
+    results. Returns ``None`` when no checks are registered.
+    """
+    src_root = str(scan_root)
+    per_file_ignores = _parse_per_file_ignores(table=config.get("per-file-ignores", {}))
+    set_excludes(filters.exclude)
+
+    if filters.single:
+        results, implicit_select = _resolve_single(selector=filters.single, src_root=src_root)
+    else:
+        implicit_select = []
+        regions = discover_regions(
+            scan_root=scan_root, root_config=config, resolve_extends=_resolve_extends
+        )
+        if len(regions) == 1:
+            results = run_all(src_root=src_root)
+        else:
+            results = _run_regions(
+                regions=regions, root_config=config, scan_root=scan_root,
+                exclude=filters.exclude, pristine=pristine,
+            )
+
+    if not results:
+        return None
+
+    # A code-form ``--check`` (e.g. DRY-001) narrows to that code; otherwise the
+    # filters' select (CLI then config) applies.
+    effective_select = implicit_select or filters.select
+    results = _apply_target_filter(results=results, scan_root=scan_root, targets=targets)
+    # The target filter works in scan-root-relative paths; everything after it
+    # (config globs, noqa source lookup, display) works in project-root-relative.
+    results = reanchor_results(results=results, from_root=scan_root, to_root=project_root)
+    results = _apply_filters(results=results, select=effective_select, ignore=filters.ignore)
+    results = _apply_excludes(results=results, exclude=filters.exclude)
+    results = _apply_per_file_ignores(results=results, table=per_file_ignores)
+    return _apply_noqa(results=results, project_root=project_root)
+
+
+def _baseline_path(*, config: dict[str, object], project_root: Path) -> Path | None:
+    """The configured baseline file path, or ``None`` when no baseline is set."""
+    configured = config.get("baseline")
+    return project_root / str(configured) if configured else None
+
+
 def _run_and_report(
     *,
     args: argparse.Namespace,
@@ -498,55 +452,34 @@ def _run_and_report(
     pristine: dict[str, object],
 ) -> None:
     """Run the selected checks, apply the filters, print, and set the exit code."""
-    src_root = str(scan_root)
     ignore = _csv(args.ignore) or _config_list(config.get("ignore"))
     exclude = _csv(args.exclude) or _config_list(config.get("exclude"))
     promote = _csv(args.promote) or _config_list(config.get("promote"))
-    per_file_ignores = _parse_per_file_ignores(table=config.get("per-file-ignores", {}))
+    select = _csv(args.select) or _config_list(config.get("select"))
     output_format = reporting.resolve_output_format(explicit=args.output_format, as_json=args.json)
 
-    # Publish excludes so checks prune them (plus the built-in junk dirs) at
-    # walk time, not just in the post-filter below. Always set, even to (), so
-    # a previous in-process run's value does not leak.
-    set_excludes(exclude)
-
-    if args.single:
-        results, implicit_select = _resolve_single(selector=args.single, src_root=src_root)
-    else:
-        implicit_select = []
-        regions = discover_regions(
-            scan_root=scan_root, root_config=config, resolve_extends=_resolve_extends
-        )
-        if len(regions) == 1:
-            results = run_all(src_root=src_root)
-        else:
-            results = _run_regions(
-                regions=regions,
-                root_config=config,
-                scan_root=scan_root,
-                exclude=exclude,
-                pristine=pristine,
-            )
-
-    if not results:
+    results = _collect_results(
+        config=config, scan_root=scan_root, project_root=project_root, targets=targets,
+        pristine=pristine,
+        filters=_Filters(single=args.single, select=select, ignore=ignore, exclude=exclude),
+    )
+    if results is None:
         print("No checks registered.")
         return
 
-    # A code-form ``--check`` (e.g. DRY-001) narrows output to that code; an
-    # explicit ``--select`` is otherwise honoured, then config ``select``.
-    select = implicit_select or _csv(args.select) or _config_list(config.get("select"))
+    baseline_path = _baseline_path(config=config, project_root=project_root)
+    if baseline_path is not None and not args.no_baseline:
+        if not baseline_path.exists():
+            print(
+                f"ERROR: baseline file '{baseline_path}' does not exist. "
+                "Run 'lanorme baseline write' first.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        results = baseline.suppress(
+            results=results, project_root=project_root, baseline_path=baseline_path
+        )
 
-    # When the request is narrower than the walked tree (a file, or a subset of
-    # paths), keep only findings for the requested targets. A lone directory
-    # request passes ``targets=None`` and this is a no-op.
-    results = _apply_target_filter(results=results, scan_root=scan_root, targets=targets)
-    # The target filter works in scan-root-relative paths; everything after it
-    # (config globs, noqa source lookup, display) works in project-root-relative.
-    results = reanchor_results(results=results, from_root=scan_root, to_root=project_root)
-    results = _apply_filters(results=results, select=select, ignore=ignore)
-    results = _apply_excludes(results=results, exclude=exclude)
-    results = _apply_per_file_ignores(results=results, table=per_file_ignores)
-    results = _apply_noqa(results=results, project_root=project_root)
     results = _apply_promotions(results=results, promote=promote)
     reporting.emit(results=results, output_format=output_format)
 
@@ -585,6 +518,54 @@ def _command_check(*, args: argparse.Namespace) -> None:
     )
 
 
+def _command_baseline(*, args: argparse.Namespace) -> None:
+    """Handle ``baseline write`` / ``baseline status`` over the whole project."""
+    scan_root, targets = _resolve_targets(args.paths)
+    # A baseline records the WHOLE project; a narrowed or sub-directory write
+    # would regenerate from a partial run and silently prune everything out of
+    # scope. Refuse it rather than corrupt the file.
+    config, project_root, _source = _discover_config(start=scan_root)
+    if targets is not None or scan_root.resolve() != project_root.resolve():
+        print(
+            "ERROR: 'baseline' must run over the whole project root, without file "
+            "targets or selection flags.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    config = _resolve_extends(config=config, project_root=project_root)
+    _load_plugin_modules(config.get("plugins", []))
+    checks = get_all_checks()
+    pristine = snapshot_defaults(checks)
+    restore_defaults(checks=checks, snapshot=pristine)
+    _apply_check_config(config=config)
+
+    baseline_path = _baseline_path(config=config, project_root=project_root)
+    if baseline_path is None:
+        baseline_path = project_root / "lanorme-baseline.json"
+
+    results = _collect_results(
+        config=config, scan_root=scan_root, project_root=project_root, targets=None,
+        pristine=pristine,
+        filters=_Filters(
+            single=None,
+            select=_config_list(config.get("select")),
+            ignore=_config_list(config.get("ignore")),
+            exclude=_config_list(config.get("exclude")),
+        ),
+    )
+    if results is None:
+        print("No checks registered.")
+        return
+
+    if args.action == "write":
+        baseline.write(results=results, project_root=project_root, baseline_path=baseline_path)
+    else:
+        baseline.print_status(
+            results=results, project_root=project_root, baseline_path=baseline_path
+        )
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -603,6 +584,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "rule":
         sys.exit(reporting.print_rule_detail(code=args.code))
+
+    if args.command == "baseline":
+        _command_baseline(args=args)
+        return
 
     _command_check(args=args)
 
