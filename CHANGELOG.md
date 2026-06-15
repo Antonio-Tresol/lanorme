@@ -9,17 +9,36 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [0.13.0]
+
 ### Added
 
-- A warning baseline for adopting LaNorme on an existing codebase. `lanorme
+- A versioned **documentation site** at
+  [lanorme.github.io/lanorme](https://lanorme.github.io/lanorme/) (mkdocs-material
+  with search and `mike` version switching), built to be read by agents as well as
+  people. Every page is also served as raw Markdown at its `.md` URL, with
+  `llms.txt` / `llms-full.txt` indexes and a generated JSON Schema
+  (`lanorme.schema.json`) for editors and agents. The configuration reference, rule
+  index, schema and llms files are generated from the tool, with a CI sync test so
+  they cannot drift.
+- A warning **baseline** for adopting LaNorme on an existing codebase. `lanorme
   baseline write` records the current findings to `lanorme-baseline.json`; with
   `[tool.lanorme] baseline = "lanorme-baseline.json"` set, those findings are
   suppressed and only new ones report (and compose with `promote`). Matching is
   content-anchored, so an entry survives edits above it; a recorded warning never
   suppresses a finding that has escalated to error-tier; and a per-key count
   guarantees new debt always surfaces. `lanorme check --no-baseline` reports the
-  whole debt and `lanorme baseline status` lists stale entries. See the README,
-  "Adopting LaNorme on an existing codebase".
+  whole debt and `lanorme baseline status` lists stale entries. See the
+  "Adopting on an existing codebase" tutorial.
+- An opt-in **`docs` check (DOCS-001..008)**: a Markdown-structure standard for a
+  documentation tree. One H1, no skipped heading levels, a canonical skimmer line
+  and image alt text are errors; preferring SVG or Mermaid over a raster image, a
+  section index, a home in the architecture, and no hand-numbered headings are
+  warnings.
+- **PROSE-004** (opt-in, advisory): an em-dash density detector. Em dashes are
+  allowed at the density of natural edited English and only sustained overuse is
+  flagged; a `docs/` region can swap the outright em-dash ban (PROSE-001) for this
+  density rule.
 
 ### Changed
 
@@ -29,14 +48,28 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - SIZE-002 counts effective (non-blank, non-comment) lines for a function,
   matching SIZE-001, so adding an explanatory comment cannot push a function
   over the limit.
-- The README now points to the full documentation site
-  ([lanorme.github.io/lanorme](https://lanorme.github.io/lanorme/)) instead of
-  duplicating the configuration and rule reference, and the repository homepage
-  links there. No behaviour change.
+- The README now points to the documentation site instead of duplicating the
+  configuration, profiles and rule reference; the repository homepage links there
+  too.
 - Heuristic-accuracy evaluations moved to a dedicated `evals/` directory (the
-  per-rule scorers, their labelled corpora, and the release audit that records a
-  commit-stamped `evals/results/v<version>.json`), leaving `benchmarks/` for
-  performance only. A contributor-facing reorganisation; no rule or CLI change.
+  per-rule scorers, their labelled corpora, and a commit-stamped release audit in
+  `evals/results/`), leaving `benchmarks/` for performance only. A
+  contributor-facing reorganisation; no rule or CLI change.
+
+### Fixed
+
+- TESTFILE-001 missed production modules whose imports appeared only inside
+  import-like strings; it now resolves imports from the AST. A repository can see
+  new TESTFILE-001 warnings it did not before (and, under a profile that promotes
+  them to errors, a build that newly fails): this is why the release is a minor.
+- PROSE-001 / PROSE-002 false positives inside double-backtick inline code spans.
+- STALE-001 false positive on a `#` inside a string literal (the scan is now
+  tokenize-based).
+- PORT-002 false positive on `from <ports_pkg> import <module>` adapter imports;
+  PORT-003 false negative on attribute-form instantiation in `api/`.
+- LAYER-002 false positive on a third-party submodule named like a layer.
+- PATH-001 vendor exclusion matched substrings rather than whole path segments.
+- TERM-001 double-fired on bare assignment targets.
 
 ## [0.12.0]
 
