@@ -213,7 +213,7 @@ in the committed JSON was changed after being committed.
 
 ### Scorer re-run
 
-Command: `uv run python benchmarks/score_cmt005.py`
+Command: `uv run python evals/score_cmt005.py`
 
 | Metric    | Round 1 (122 labels) | Round 2 (167 labels) |
 |-----------|---------------------:|---------------------:|

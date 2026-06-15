@@ -73,7 +73,7 @@ identifiers, tests, and ORM call chains, not in hand-written raw SQL.
 
 ## Current detector — P/R/F1 against the labeled corpus
 
-Run: `uv run python benchmarks/score_sec002.py`
+Run: `uv run python evals/score_sec002.py`
 
 ```
 labels: 120 (41 raw_sql / 79 ok)

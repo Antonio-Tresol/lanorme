@@ -50,7 +50,7 @@ Labels are line-by-line on every `#` comment in every fixture file
 
 ## Current-detector score
 
-Run via `uv run python benchmarks/score_cmt001.py`:
+Run via `uv run python evals/score_cmt001.py`:
 
 ```
 labels: 165 comments (66 commented_code / 99 ok)

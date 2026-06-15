@@ -7,7 +7,7 @@ is precision-first by construction: 11-category allowlist, AST adjacency,
 stem-equality, a hand-curated verb-to-AST-node predicate table, an
 asymmetric coverage floor of 1.0, and a content-word cap.
 
-Measured against ``tests/fixtures/comments_restating/`` (167 labels):
+Measured against ``evals/corpora/comments_restating/`` (167 labels):
 **P = 1.000 / R = 0.418 / F1 = 0.589**. The recall is bounded by the
 design's refusal to chase synonym paraphrases without losing precision;
 the metric is the headline.

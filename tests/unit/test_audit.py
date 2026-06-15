@@ -1,10 +1,10 @@
-"""The benchmark audit harness must record a complete, well-formed result JSON.
+"""The evaluation audit harness must record a complete, well-formed result JSON.
 
-``benchmarks/audit.py`` is the release audit trail: it scores every labelled
-corpus and stamps the run with version and hardware metadata. This test runs it
-end to end in accuracy-only mode (``--no-perf``) against a throwaway output
-path, so it never leaves a ``benchmarks/results/v*.json`` behind, and asserts
-the metadata stamp and the per-rule accuracy entries are all present.
+``evals/audit.py`` is the release audit trail: it scores every labelled corpus
+and stamps the run with version and hardware metadata. This test runs it end to
+end in accuracy-only mode (``--no-perf``) against a throwaway output path, so it
+never leaves an ``evals/results/v*.json`` behind, and asserts the metadata stamp
+and the per-rule accuracy entries are all present.
 
 Tests follow AAA structure with inline ``# Arrange / # Act / # Assert`` markers.
 """
@@ -16,11 +16,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-_AUDIT = Path(__file__).resolve().parents[2] / "benchmarks" / "audit.py"
+_AUDIT = Path(__file__).resolve().parents[2] / "evals" / "audit.py"
 
 _METADATA_KEYS = {
     "lanorme_version",
     "git_commit",
+    "git_dirty",
     "python_version",
     "platform",
     "processor",

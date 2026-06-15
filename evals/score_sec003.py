@@ -1,17 +1,18 @@
-"""Score CMT-005 (restating comments) against the labeled evaluation corpus.
+"""Score SECRETPY-001 (no hardcoded secrets) against the labeled evaluation corpus.
 
-Runs ``CommentsCheck`` with the restating rule enabled over the labeled corpus
-under ``tests/fixtures/comments_restating/``, compares what it flags as CMT-005
-to the ground-truth labels in ``labels.json``, and reports precision, recall and
-F1 along with the explicit false-positive and false-negative lists.
+Runs the ``security_patterns`` check over the labeled corpus under
+``evals/corpora/security_hardcoded_secrets/``, compares everything it flags
+under the SECRETPY-001 rule prefix to the ground-truth labels in ``labels.json``,
+and reports precision, recall and F1 plus the explicit FP and FN lists.
 
-The corpus is deliberately precision-hostile: it is heavy on adversarial
-negatives (why/rationale comments, warnings, section headers, pragmas, and
-short comments that share vocabulary with the code but still add meaning) so the
-detector's tendency to flag valuable comments is exposed.
+The corpus stratifies real-world Python patterns: AWS keys, password literals,
+JWTs, PEM blocks, env-var lookups, settings references, placeholders, type
+annotations, regex patterns describing secret shapes, help/docstring text,
+log/format strings, URL paths, function-call resolutions, and a test-fixture
+carve-out file.
 
 Run:
-    uv run python benchmarks/score_cmt005.py
+    uv run python evals/score_sec003.py
 """
 
 from __future__ import annotations
@@ -20,22 +21,31 @@ import json
 import sys
 from pathlib import Path
 
-from lanorme.checks.restating import RestatingCheck
+from lanorme import get_check
+from lanorme.checks import secrets as _secrets  # noqa: F401  (self-register)
 
-_CORPUS = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "comments_restating"
+_CORPUS = (
+    Path(__file__).resolve().parent
+    / "corpora"
+    / "security_hardcoded_secrets"
+)
 _LABELS = _CORPUS / "labels.json"
 
-# The label string that marks a comment as a genuine restatement (a positive).
-_RESTATING = "restating"
+# Label string that marks a genuine hardcoded secret (a positive).
+_SECRET = "secret"
 _OK = "ok"
 
+# The rule string is the long form "SECRETPY-001: ..." — match by prefix so the
+# scorer stays stable if the description text is reworded.
+_RULE_PREFIX = "SECRETPY-001"
+
 # The rule code this scorer measures (exposed for the audit harness).
-RULE = "CMT-005"
+RULE = "SECRETPY-001"
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_labels() -> dict[tuple[str, int], dict[str, str]]:
-    """Map (relative_file, line) -> {label, note} for every labeled comment."""
+    """Map (relative_file, line) -> {label, note} for every labeled line."""
     raw = json.loads(_LABELS.read_text(encoding="utf-8"))
     labels: dict[tuple[str, int], dict[str, str]] = {}
     for rel_file, entries in raw.items():
@@ -44,14 +54,16 @@ def _load_labels() -> dict[tuple[str, int], dict[str, str]]:
     return labels
 
 
-def _flagged_cmt005() -> set[tuple[str, int]]:
-    """Run the ``restating`` check; return the set of CMT-005 (file, line)."""
-    check = RestatingCheck(enabled=True)
+def _flagged_sec003() -> set[tuple[str, int]]:
+    """Run the security check and return the set of SECRETPY-001-flagged (file, line)."""
+    check = get_check("secrets")
+    if check is None:
+        raise RuntimeError("secrets check is not registered")
     result = check.run(src_root=str(_CORPUS))
     return {
         (v.file.replace("\\", "/"), v.line)
         for v in result.violations
-        if v.rule == "CMT-005"
+        if v.rule.startswith(_RULE_PREFIX)
     }
 
 
@@ -60,7 +72,7 @@ def _ratio(*, numerator: float, denominator: float) -> float:
 
 
 def score() -> dict:
-    """Run CMT-005 against its labelled corpus and return metrics.
+    """Run SECRETPY-001 against its labelled corpus and return metrics.
 
     Returns a dict with rule, corpus (repo-relative), tp/fp/fn/tn and
     precision/recall/f1. Raises ValueError if the corpus is out of date
@@ -70,17 +82,17 @@ def score() -> dict:
         raise ValueError(f"labels file not found at {_LABELS}")
 
     labels = _load_labels()
-    positives = {key for key, entry in labels.items() if entry["label"] == _RESTATING}
+    positives = {key for key, entry in labels.items() if entry["label"] == _SECRET}
     negatives = {key for key, entry in labels.items() if entry["label"] == _OK}
-    flagged = _flagged_cmt005()
+    flagged = _flagged_sec003()
 
-    # Every flagged line must be a comment we labelled; an unlabelled flag means
-    # the corpus is missing a label and the precision number cannot be trusted.
+    # Every SECRETPY-001 flag must correspond to a labelled line; an unlabelled
+    # flag means the corpus is missing a label and precision is untrustworthy.
     unlabeled = sorted(flagged - set(labels))
     if unlabeled:
         site = f"{unlabeled[0][0]}:{unlabeled[0][1]}"
         raise ValueError(
-            f"CMT-005 flagged {len(unlabeled)} line(s) not in labels.json "
+            f"SECRETPY-001 flagged {len(unlabeled)} line(s) not in labels.json "
             f"(first: {site}); update labels.json before scoring."
         )
 
@@ -107,20 +119,20 @@ def main() -> int:
         return 2
 
     labels = _load_labels()
-    positives = {key for key, entry in labels.items() if entry["label"] == _RESTATING}
+    positives = {key for key, entry in labels.items() if entry["label"] == _SECRET}
     negatives = {key for key, entry in labels.items() if entry["label"] == _OK}
-    flagged = _flagged_cmt005()
+    flagged = _flagged_sec003()
     false_positives = sorted(flagged & negatives)
     false_negatives = sorted(positives - flagged)
 
     tp, fp, fn = metrics["tp"], metrics["fp"], metrics["fn"]
     precision, recall, f1 = metrics["precision"], metrics["recall"], metrics["f1"]
 
-    print("CMT-005 restating-comment detector — evaluation against labeled corpus")
+    print("SECRETPY-001 hardcoded-secret detector — evaluation against labeled corpus")
     print(f"corpus: {_CORPUS}")
     print(
-        f"labels: {len(labels)} comments "
-        f"({len(positives)} restating / {len(negatives)} ok)\n"
+        f"labels: {len(labels)} lines "
+        f"({len(positives)} secret / {len(negatives)} ok)\n"
     )
 
     print("Confusion counts")
@@ -140,16 +152,16 @@ def main() -> int:
             note = labels[(rel_file, line)].get("note", "")
             print(f"  {rel_file}:{line}  {note}")
     else:
-        print("  (none) — the detector flagged no comment that the corpus marks valuable")
+        print("  (none) — the detector flagged no line that the corpus marks safe")
     print()
 
-    print(f"FALSE NEGATIVES (labeled 'restating' but missed) — {fn}")
+    print(f"FALSE NEGATIVES (labeled 'secret' but missed) — {fn}")
     if false_negatives:
         for rel_file, line in false_negatives:
             note = labels[(rel_file, line)].get("note", "")
             print(f"  {rel_file}:{line}  {note}")
     else:
-        print("  (none) — the detector caught every labeled restatement")
+        print("  (none) — the detector caught every labeled secret")
 
     return 0
 

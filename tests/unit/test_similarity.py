@@ -2,7 +2,7 @@
 
 The headline test is a corpus regression lock: the check must hold precision
 1.0 and recall >= 0.85 on the labelled corpus under
-``tests/fixtures/duplication_similar/``. The rest are targeted behaviour tests.
+``evals/corpora/duplication_similar/``. The rest are targeted behaviour tests.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from pathlib import Path
 from lanorme import Status
 from lanorme.checks.similarity import SimilarityCheck
 
-_CORPUS = Path(__file__).resolve().parents[1] / "fixtures" / "duplication_similar"
+_CORPUS = Path(__file__).resolve().parents[2] / "evals" / "corpora" / "duplication_similar"
 
 
 def _enabled() -> SimilarityCheck:

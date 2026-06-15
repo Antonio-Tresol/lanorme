@@ -53,7 +53,7 @@ literal commits.
 
 ## Current detector — P/R/F1 against the labeled corpus
 
-Run: `uv run python benchmarks/score_sec003.py`
+Run: `uv run python evals/score_sec003.py`
 
 ```
 labels: 155 (43 secret / 112 ok)

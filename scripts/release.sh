@@ -34,9 +34,9 @@ fi
 uv run --group dev pytest tests/unit -q
 uv run lanorme check .            # dogfood: nonzero exit on any FAIL
 uv run python scripts/gen_docs.py --check   # docs in sync: fail if generated docs are stale
-# benchmark audit: always record the deterministic accuracy audit for the
+# eval audit: always record the deterministic accuracy audit for the
 # release (perf is run manually per the release skill).
-uv run python benchmarks/audit.py --version "$VERSION" --no-perf
+uv run python evals/audit.py --version "$VERSION" --no-perf
 
 # --- bump the version (portable in-place edit) ------------------------------
 perl -i -pe "s/^version = .*/version = \"$VERSION\"/" pyproject.toml

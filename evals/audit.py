@@ -1,19 +1,20 @@
-"""Record a per-release benchmark audit as a single result JSON.
+"""Record a per-release evaluation audit as a single result JSON.
 
 The audit captures the deterministic ACCURACY of every labelled-corpus scorer
-(each ``benchmarks/score_*.py`` exposing ``score()``) together with a hardware
-and version METADATA stamp and, unless skipped, a best-effort PERFORMANCE
-sweep that reuses the pinned end-to-end corpora. The JSON is committed under
-``benchmarks/results/`` as the audit trail for a release.
+(each ``evals/score_*.py`` exposing ``score()``) together with a hardware and
+version METADATA stamp -- including the git commit and dirty flag that pin the
+exact dataset and code that produced the numbers -- and, unless skipped, a
+best-effort PERFORMANCE sweep that reuses the pinned end-to-end corpora. The
+JSON is committed under ``evals/results/`` as the audit trail for a release.
 
 Usage:
-    uv run python benchmarks/audit.py --version X.Y.Z [--no-perf] [--output PATH]
+    uv run python evals/audit.py --version X.Y.Z [--no-perf] [--output PATH]
 
 Flags:
     --version X.Y.Z   Release version being audited (required, non-empty).
     --no-perf         Skip the performance sweep (accuracy only).
     --output PATH     Write the JSON here instead of the default
-                      benchmarks/results/v<version>.json.
+                      evals/results/v<version>.json.
 
 The run is non-interactive (no prompts). Progress and diagnostics go to stderr;
 a concise one-line-per-rule summary goes to stdout.
@@ -73,6 +74,7 @@ class Metadata(TypedDict):
     audited_version: str
     lanorme_version: str
     git_commit: str
+    git_dirty: bool
     python_version: str
     platform: str
     processor: str
@@ -94,7 +96,7 @@ _PERF_RUNS = 3
 
 
 def _discover_scorers() -> list[Path]:
-    """Return the sorted list of ``benchmarks/score_*.py`` module paths."""
+    """Return the sorted list of ``evals/score_*.py`` module paths."""
     return sorted(_HERE.glob("score_*.py"))
 
 
@@ -152,7 +154,7 @@ def _collect_performance() -> dict[str, CorpusTiming]:
     cannot be downloaded (offline) is recorded as skipped rather than crashing
     the audit.
     """
-    bench = _import_module(path=_HERE / "run_benchmarks.py")
+    bench = _import_module(path=_REPO_ROOT / "benchmarks" / "run_benchmarks.py")
     corpora: dict[str, CorpusTiming] = {}
     for name, spec, _big in bench.CORPORA:
         print(f"timing {name} ...", file=sys.stderr)
@@ -189,6 +191,25 @@ def _git_commit() -> str:
     return out.stdout.strip() or "unknown"
 
 
+def _git_dirty() -> bool:
+    """Return True if the working tree has uncommitted changes.
+
+    A dirty tree means the result was produced from code or corpora that no
+    recorded commit captures, so ``git_commit`` alone would not reproduce it.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=_REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return bool(out.stdout.strip())
+
+
 def _lanorme_version() -> str:
     """Read ``__version__`` from the installed lanorme package."""
     if lanorme is None:
@@ -202,6 +223,7 @@ def _build_metadata(*, audited_version: str) -> Metadata:
         "audited_version": audited_version,
         "lanorme_version": _lanorme_version(),
         "git_commit": _git_commit(),
+        "git_dirty": _git_dirty(),
         "python_version": platform.python_version(),
         "platform": platform.platform(),
         "processor": platform.processor() or platform.machine(),
@@ -268,7 +290,7 @@ def _parse_args(*, argv: list[str]) -> argparse.Namespace:
         "--output",
         dest="output",
         default=None,
-        help="Write the JSON here instead of benchmarks/results/v<version>.json.",
+        help="Write the JSON here instead of evals/results/v<version>.json.",
     )
     return parser.parse_args(argv)
 

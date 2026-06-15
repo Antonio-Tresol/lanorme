@@ -1,7 +1,7 @@
 """Score PROSE-004 (em-dash density) against the labelled evaluation corpus.
 
 Runs ``ProseCheck`` with the em-dash-density advisory enabled over the labelled
-corpus under ``tests/fixtures/prose_em_dash/``, compares which Markdown documents
+corpus under ``evals/corpora/prose_em_dash/``, compares which Markdown documents
 it flags with PROSE-004 to the ground-truth labels in ``labels.json``, and reports
 precision, recall and F1 along with the explicit false-positive and false-negative
 lists.
@@ -17,7 +17,7 @@ of their sentences. The point is to measure whether the calibrated thresholds
 separate natural prose from overuse without a single false positive.
 
 Run:
-    uv run python benchmarks/score_prose004.py
+    uv run python evals/score_prose004.py
 """
 
 from __future__ import annotations
@@ -29,8 +29,8 @@ from pathlib import Path
 from lanorme.checks.prose import ProseCheck
 
 _RULE = "PROSE-004"
-_CORPUS_REL = "tests/fixtures/prose_em_dash"
-_CORPUS = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "prose_em_dash"
+_CORPUS_REL = "evals/corpora/prose_em_dash"
+_CORPUS = Path(__file__).resolve().parent / "corpora" / "prose_em_dash"
 _LABELS = _CORPUS / "labels.json"
 
 

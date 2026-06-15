@@ -1,18 +1,17 @@
-"""Score SQL-001 (no raw SQL) against the labeled evaluation corpus.
+"""Score CMT-005 (restating comments) against the labeled evaluation corpus.
 
-Runs every enabled check over the labeled corpus under
-``tests/fixtures/security_raw_sql/``, filters to violations whose ``rule``
-starts with ``SQL-001`` (so any future sub-codes are picked up too), and
-compares them against the ground-truth labels in ``labels.json``.
+Runs ``CommentsCheck`` with the restating rule enabled over the labeled corpus
+under ``evals/corpora/comments_restating/``, compares what it flags as CMT-005
+to the ground-truth labels in ``labels.json``, and reports precision, recall and
+F1 along with the explicit false-positive and false-negative lists.
 
-The corpus deliberately mixes seven raw-SQL shapes against twelve adversarial
-negative categories (ORM expressions, parameterized executes, SQL in
-docstrings / comments / log messages / regex / changelogs / test assertions,
-``.execute`` on non-DB objects, identifiers containing SQL words, and
-Alembic migrations under ``alembic/versions/``).
+The corpus is deliberately precision-hostile: it is heavy on adversarial
+negatives (why/rationale comments, warnings, section headers, pragmas, and
+short comments that share vocabulary with the code but still add meaning) so the
+detector's tendency to flag valuable comments is exposed.
 
 Run:
-    uv run python benchmarks/score_sec002.py
+    uv run python evals/score_cmt005.py
 """
 
 from __future__ import annotations
@@ -21,22 +20,22 @@ import json
 import sys
 from pathlib import Path
 
-from lanorme import run_all
-from lanorme.cli import _load_builtin_checks  # noqa: PLC2701 -- benchmarks pin to internals
+from lanorme.checks.restating import RestatingCheck
 
-_CORPUS = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "security_raw_sql"
+_CORPUS = Path(__file__).resolve().parent / "corpora" / "comments_restating"
 _LABELS = _CORPUS / "labels.json"
 
-_RAW_SQL = "raw_sql"
+# The label string that marks a comment as a genuine restatement (a positive).
+_RESTATING = "restating"
 _OK = "ok"
 
 # The rule code this scorer measures (exposed for the audit harness).
-RULE = "SQL-001"
+RULE = "CMT-005"
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_labels() -> dict[tuple[str, int], dict[str, str]]:
-    """Map (relative_file, line) -> {label, note} for every labeled site."""
+    """Map (relative_file, line) -> {label, note} for every labeled comment."""
     raw = json.loads(_LABELS.read_text(encoding="utf-8"))
     labels: dict[tuple[str, int], dict[str, str]] = {}
     for rel_file, entries in raw.items():
@@ -45,25 +44,15 @@ def _load_labels() -> dict[tuple[str, int], dict[str, str]]:
     return labels
 
 
-def _flagged_sec002() -> set[tuple[str, int]]:
-    """Return (file, line) for every violation whose rule starts with SQL-001."""
-    _load_builtin_checks()
-    results = run_all(src_root=str(_CORPUS))
-    flagged: set[tuple[str, int]] = set()
-    for result in results:
-        for v in result.violations:
-            if v.rule.startswith("SQL-001"):
-                flagged.add((_relative(v.file), v.line))
-    return flagged
-
-
-def _relative(file: str) -> str:
-    """Turn an absolute path emitted by a check into a corpus-relative slash path."""
-    norm = file.replace("\\", "/")
-    corpus_str = str(_CORPUS).replace("\\", "/")
-    if norm.startswith(corpus_str + "/"):
-        return norm[len(corpus_str) + 1 :]
-    return norm
+def _flagged_cmt005() -> set[tuple[str, int]]:
+    """Run the ``restating`` check; return the set of CMT-005 (file, line)."""
+    check = RestatingCheck(enabled=True)
+    result = check.run(src_root=str(_CORPUS))
+    return {
+        (v.file.replace("\\", "/"), v.line)
+        for v in result.violations
+        if v.rule == "CMT-005"
+    }
 
 
 def _ratio(*, numerator: float, denominator: float) -> float:
@@ -71,7 +60,7 @@ def _ratio(*, numerator: float, denominator: float) -> float:
 
 
 def score() -> dict:
-    """Run SQL-001 against its labelled corpus and return metrics.
+    """Run CMT-005 against its labelled corpus and return metrics.
 
     Returns a dict with rule, corpus (repo-relative), tp/fp/fn/tn and
     precision/recall/f1. Raises ValueError if the corpus is out of date
@@ -81,15 +70,17 @@ def score() -> dict:
         raise ValueError(f"labels file not found at {_LABELS}")
 
     labels = _load_labels()
-    positives = {key for key, entry in labels.items() if entry["label"] == _RAW_SQL}
+    positives = {key for key, entry in labels.items() if entry["label"] == _RESTATING}
     negatives = {key for key, entry in labels.items() if entry["label"] == _OK}
-    flagged = _flagged_sec002()
+    flagged = _flagged_cmt005()
 
+    # Every flagged line must be a comment we labelled; an unlabelled flag means
+    # the corpus is missing a label and the precision number cannot be trusted.
     unlabeled = sorted(flagged - set(labels))
     if unlabeled:
         site = f"{unlabeled[0][0]}:{unlabeled[0][1]}"
         raise ValueError(
-            f"SQL-001 flagged {len(unlabeled)} line(s) not in labels.json "
+            f"CMT-005 flagged {len(unlabeled)} line(s) not in labels.json "
             f"(first: {site}); update labels.json before scoring."
         )
 
@@ -116,20 +107,20 @@ def main() -> int:
         return 2
 
     labels = _load_labels()
-    positives = {key for key, entry in labels.items() if entry["label"] == _RAW_SQL}
+    positives = {key for key, entry in labels.items() if entry["label"] == _RESTATING}
     negatives = {key for key, entry in labels.items() if entry["label"] == _OK}
-    flagged = _flagged_sec002()
+    flagged = _flagged_cmt005()
     false_positives = sorted(flagged & negatives)
     false_negatives = sorted(positives - flagged)
 
     tp, fp, fn = metrics["tp"], metrics["fp"], metrics["fn"]
     precision, recall, f1 = metrics["precision"], metrics["recall"], metrics["f1"]
 
-    print("SQL-001 raw-SQL detector -- evaluation against labeled corpus")
+    print("CMT-005 restating-comment detector — evaluation against labeled corpus")
     print(f"corpus: {_CORPUS}")
     print(
-        f"labels: {len(labels)} sites "
-        f"({len(positives)} raw_sql / {len(negatives)} ok)\n"
+        f"labels: {len(labels)} comments "
+        f"({len(positives)} restating / {len(negatives)} ok)\n"
     )
 
     print("Confusion counts")
@@ -143,22 +134,22 @@ def main() -> int:
     print(f"  RECALL:    {recall:.3f}  (TP / (TP + FN))")
     print(f"  F1:        {f1:.3f}\n")
 
-    print(f"FALSE POSITIVES (flagged but labeled 'ok') -- {fp}")
+    print(f"FALSE POSITIVES (flagged but labeled 'ok') — {fp}")
     if false_positives:
         for rel_file, line in false_positives:
             note = labels[(rel_file, line)].get("note", "")
             print(f"  {rel_file}:{line}  {note}")
     else:
-        print("  (none) -- the detector flagged no benign site in the corpus")
+        print("  (none) — the detector flagged no comment that the corpus marks valuable")
     print()
 
-    print(f"FALSE NEGATIVES (labeled 'raw_sql' but missed) -- {fn}")
+    print(f"FALSE NEGATIVES (labeled 'restating' but missed) — {fn}")
     if false_negatives:
         for rel_file, line in false_negatives:
             note = labels[(rel_file, line)].get("note", "")
             print(f"  {rel_file}:{line}  {note}")
     else:
-        print("  (none) -- the detector caught every labeled raw-SQL site")
+        print("  (none) — the detector caught every labeled restatement")
 
     return 0
 

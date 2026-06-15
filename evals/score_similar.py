@@ -16,7 +16,7 @@ Reports precision, recall, F1, the confusion counts, and the misclassified
 filenames.
 
 Run:
-    uv run python benchmarks/score_similar.py
+    uv run python evals/score_similar.py
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from pathlib import Path
 
 from lanorme.checks.similarity import SimilarityCheck
 
-_CORPUS = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "duplication_similar"
+_CORPUS = Path(__file__).resolve().parent / "corpora" / "duplication_similar"
 _POSITIVES = _CORPUS / "positives"
 _NEGATIVES = _CORPUS / "negatives"
 

@@ -29,6 +29,14 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - SIZE-002 counts effective (non-blank, non-comment) lines for a function,
   matching SIZE-001, so adding an explanatory comment cannot push a function
   over the limit.
+- The README now points to the full documentation site
+  ([lanorme.github.io/lanorme](https://lanorme.github.io/lanorme/)) instead of
+  duplicating the configuration and rule reference, and the repository homepage
+  links there. No behaviour change.
+- Heuristic-accuracy evaluations moved to a dedicated `evals/` directory (the
+  per-rule scorers, their labelled corpora, and the release audit that records a
+  commit-stamped `evals/results/v<version>.json`), leaving `benchmarks/` for
+  performance only. A contributor-facing reorganisation; no rule or CLI change.
 
 ## [0.12.0]
 

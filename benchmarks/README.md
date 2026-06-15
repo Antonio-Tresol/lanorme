@@ -1,5 +1,9 @@
 # Benchmarks
 
+This directory measures **how fast** LaNorme runs. For **how good** the
+heuristic rules are (precision / recall / F1 against labelled corpora), see
+[`../evals/`](../evals/).
+
 Two scripts:
 
 ### `run_benchmarks.py`: reproducible end-to-end suite

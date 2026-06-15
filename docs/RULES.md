@@ -4,8 +4,8 @@ This reference describes every rule code LaNorme can emit, one section per code,
 
 One section per rule code emitted by LaNorme. Each section says what the
 rule catches, what it does not, where to configure it, and (where the
-rule has a labelled corpus under `tests/fixtures/` and a scorer under
-`benchmarks/`) the measured precision / recall / F1 on that corpus.
+rule has a labelled corpus under `evals/corpora/` and a scorer under
+`evals/`) the measured precision / recall / F1 on that corpus.
 
 Live rule list: `lanorme rules`.
 Default policy and per-check configuration: see the README.
@@ -67,7 +67,7 @@ tried in several wrapping strategies before being declared prose:
 - Decorator lines (`@foo`) are tried followed by `def _(): pass`.
 
 Measured against the 165-comment corpus under
-`tests/fixtures/comments_commented_code/` with `benchmarks/score_cmt001.py`:
+`evals/corpora/comments_commented_code/` with `evals/score_cmt001.py`:
 **P = 0.985 / R = 1.000 / F1 = 0.992** (TP = 66, FP = 1, FN = 0). The
 single FP is an illustrative call signature following a `Typical usage:`
 header.
@@ -101,7 +101,7 @@ that carry a why, a caveat, a unit, or a reference. It will miss synonym
 paraphrases. Full design: `docs/cmt005-design.md`.
 
 Measured against the 167-comment corpus under
-`tests/fixtures/comments_restating/` with `benchmarks/score_cmt005.py`:
+`evals/corpora/comments_restating/` with `evals/score_cmt005.py`:
 **P = 1.000 / R = 0.418 / F1 = 0.589** (TP = 33, FP = 0, FN = 46, TN = 88).
 The 0.418 recall is bounded by the design's refusal to chase synonym
 paraphrases without losing precision.
@@ -237,7 +237,7 @@ that shares a shape but differs in its string keys or source attributes (config
 builders, dispatch tables, field mappers, framework handlers) is rejected.
 Equality/dunder/`@property` boilerplate and drifted logging-message strings are
 handled specially. Measured on the bundled corpus
-(`tests/fixtures/duplication_similar/`, scorer `benchmarks/score_similar.py`):
+(`evals/corpora/duplication_similar/`, scorer `evals/score_similar.py`):
 **precision 1.000 / recall 0.850 / F1 0.919**. Known recall gaps: fully renamed
 attribute sets and error-message-only drift.
 
@@ -471,8 +471,8 @@ stops a single high reading from tripping the warning. Setting `em_dash = false`
 while `em_dash_density = true` switches a region from the `PROSE-001` ban to
 this density advisory.
 
-Measured on the labelled corpus `tests/fixtures/prose_em_dash` (run
-`benchmarks/score_prose004.py`): **P = 1.000 / R = 1.000 / F1 = 1.000** (TP = 3,
+Measured on the labelled corpus `evals/corpora/prose_em_dash` (run
+`evals/score_prose004.py`): **P = 1.000 / R = 1.000 / F1 = 1.000** (TP = 3,
 FP = 0, FN = 0, TN = 11). The corpus exists to prove the calibrated thresholds
 do not false-positive on natural prose.
 
@@ -545,7 +545,7 @@ Each rule has a positive + negative unit test under
   second positional on `.execute`) with placeholder marks (`:name`,
   `%s`, `?`) is treated as safely parameterised and not flagged.
   Excludes `alembic/` and `test_*` files. Measured against
-  `tests/fixtures/security_raw_sql/` (120 labels): **P = 1.000 /
+  `evals/corpora/security_raw_sql/` (120 labels): **P = 1.000 /
   R = 1.000 / F1 = 1.000**. Known limitations not in the corpus: SQL
   built across multiple statements with helper functions; lazy-loaded
   query templates; non-Python query files.
@@ -564,7 +564,7 @@ Each rule has a positive + negative unit test under
   chars, mixed case, digits) to defeat the marker (AWS docs-style
   example secret keys). Excludes `conftest.py`, `seed_dev.py`, and
   files starting with `test_`. Measured against
-  `tests/fixtures/security_hardcoded_secrets/` (155 labels):
+  `evals/corpora/security_hardcoded_secrets/` (155 labels):
   **P = 1.000 / R = 1.000 / F1 = 1.000**. **Scope warning**:
   Python-source only; `.env`, `*.yaml`, `*.ipynb`, `*.tf`, `Dockerfile`,
   GitHub Actions workflows are out of scope until a separate

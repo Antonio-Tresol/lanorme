@@ -1,17 +1,19 @@
 # Release audit results
 
 This directory holds one JSON file per release, named `v<version>.json`,
-written by `benchmarks/audit.py`. Each file is committed as the audit trail for
-that release: a durable record of how LaNorme's heuristic rules scored against
-their labelled corpora at the moment of cutting the version.
+written by [`../audit.py`](../audit.py). Each file is committed as the audit
+trail for that release: a durable record of how LaNorme's heuristic rules scored
+against their labelled corpora at the moment of cutting the version. The
+`git_commit` and `git_dirty` fields pin the exact dataset and code that produced
+the numbers.
 
 ## Schema
 
 Every file has three top-level keys.
 
 - `metadata`: the version and hardware stamp. It records `audited_version`,
-  `lanorme_version`, `git_commit`, `python_version`, `platform`, `processor`
-  and `timestamp_utc`.
+  `lanorme_version`, `git_commit`, `git_dirty`, `python_version`, `platform`,
+  `processor` and `timestamp_utc`.
 - `accuracy`: a list with one entry per scorer. A scored entry carries `rule`,
   `corpus`, `tp`, `fp`, `fn`, `tn`, `precision`, `recall` and `f1`. A scorer
   whose corpus has gone stale records `rule` and an `error` message instead of
