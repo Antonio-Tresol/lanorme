@@ -1,3 +1,214 @@
+# LaNorme, full referenceThe generated and authored reference docs concatenated for agent ingestion.
+
+---
+
+# Source: docs/reference/configuration.md
+# Configuration reference
+
+This reference lists every top-level key in the `[tool.lanorme]` table, generated
+from the tool so it cannot drift. Per-check settings (`[tool.lanorme.<check>]`) are
+documented with each rule in the [rule reference](../RULES.md). A machine-readable
+[`lanorme.schema.json`](https://lanorme.github.io/lanorme/lanorme.schema.json) validates this table in editors.
+
+Configuration lives in `[tool.lanorme]` in `pyproject.toml`, or in a standalone
+`lanorme.toml` / `.lanorme.toml`. **The table header differs between the two.** In
+`pyproject.toml` every key sits under `[tool.lanorme]`, and a per-check table under
+`[tool.lanorme.<check>]`. In a standalone `lanorme.toml` the prefix is dropped: keys
+are top-level (`promote = ["TYPE-004"]`) and a sub-table is bare (`[per-file-ignores]`,
+`[prose]`). The examples below show the `pyproject.toml` form; a `[tool.lanorme]` prefix
+written inside a `lanorme.toml` is silently ignored. Keys also have command-line
+equivalents (`--select`, `--ignore`); the command line wins over config.
+
+| Key | Type | Default | Feature |
+| --- | --- | --- | --- |
+| [`select`](#select) | list of strings | all enabled checks | Filtering |
+| [`ignore`](#ignore) | list of strings | [] (nothing ignored) | Filtering |
+| [`exclude`](#exclude) | list of glob strings | [] (built-in junk dirs only) | Filtering |
+| [`per-file-ignores`](#per-file-ignores) | table of glob to code list | {} (no per-file rules) | Filtering |
+| [`promote`](#promote) | list of strings | [] (advisories stay warnings) | Severity |
+| [`extends`](#extends) | string or list of strings | none | Profiles |
+| [`baseline`](#baseline) | string (path) | none | Adoption |
+| [`source_root`](#source_root) | string (path) | the scan root | Architecture |
+| [`plugins`](#plugins) | list of strings | [] (built-in checks only) | Extensibility |
+
+## `select`
+
+Run only these rule codes or categories. A category (`SEC`) covers every code in it; `ALL` selects everything.
+
+```toml
+select = ["SECRETPY", "TYPE-004"]
+```
+
+## `ignore`
+
+Skip these rule codes or categories everywhere.
+
+```toml
+ignore = ["NAMING-003"]
+```
+
+## `exclude`
+
+File-path globs to skip entirely; matched files are never walked.
+
+```toml
+exclude = ["**/migrations/*", "generated/*"]
+```
+
+## `per-file-ignores`
+
+Suppress specific rule codes or categories for files matching a glob.
+
+```toml
+[tool.lanorme.per-file-ignores]
+"tests/*" = ["SIZE-001", "AAA"]
+```
+
+## `promote`
+
+Advisory warnings whose codes (or `ALL`) become build-failing errors. Runs after every suppression, so an ignored or noqa'd warning is never promoted.
+
+```toml
+promote = ["TYPE-004"]   # or ["ALL"]
+```
+
+## `extends`
+
+Adopt one or more profiles -- a bundled name (`strict`, `hexagonal`, `clean`, `layered`) or a path to a local `.toml`. Profiles merge left to right, then your own keys merge on top, so local always wins.
+
+```toml
+extends = ["strict", "hexagonal"]
+```
+
+## `baseline`
+
+Path to a baseline file. Findings recorded by `lanorme baseline write` are suppressed, so only new findings report. See the adoption tutorial.
+
+```toml
+baseline = "lanorme-baseline.json"
+```
+
+## `source_root`
+
+The top-level package directory when ports, adapters and layers live under a nested package; the architecture checks interpret their paths relative to it.
+
+```toml
+source_root = "src/myapp"
+```
+
+## `plugins`
+
+Extra check modules to import so they self-register, beyond the built-ins and entry-point plugins.
+
+```toml
+plugins = ["my_company.lanorme_checks"]
+```
+
+## Per-check settings
+
+Each check is configured under its own table, always with an `enabled`
+toggle (opt-in checks default to `false`). The settings a check accepts are
+listed in its [rule reference](../RULES.md) section. For example:
+
+```toml
+[tool.lanorme.prose]
+enabled = true
+
+[tool.lanorme.layer_deps]
+composition_root = ["api/dependencies.py"]
+```
+
+
+---
+
+# Source: docs/reference/rules-index.md
+# Rule index
+
+This reference maps every rule code to its check and whether the check is opt-in
+(default off), generated from the registry. Full descriptions, configuration and precision
+notes for each rule are in the [rule reference](../RULES.md).
+
+| Rule | Check | Opt-in |
+| --- | --- | --- |
+| `AAA-001` | test_style | yes |
+| `AAA-002` | test_style | yes |
+| `ATTR-001` | attribute_access | yes |
+| `ATTR-002` | attribute_access | yes |
+| `AUTHN-001` | security_patterns | no |
+| `CMT-001` | comments | no |
+| `CMT-002` | comments | no |
+| `CMT-005` | restating | yes |
+| `COMPLEXITY-001` | file_limits | no |
+| `CRYPTO-001` | security_calls | no |
+| `DEBUG-001` | security_calls | no |
+| `DESERIAL-001` | security_calls | no |
+| `DOCS-001` | docs | yes |
+| `DOCS-002` | docs | yes |
+| `DOCS-003` | docs | yes |
+| `DOCS-004` | docs | yes |
+| `DOCS-005` | docs | yes |
+| `DOCS-006` | docs | yes |
+| `DOCS-007` | docs | yes |
+| `DOCS-008` | docs | yes |
+| `DRY-001` | duplication | no |
+| `ENDPOINT-001` | pattern_divergence | no |
+| `EVAL-001` | security_calls | no |
+| `IMPORT-001` | pattern_divergence | no |
+| `JUNK-001` | stray_artifacts | no |
+| `JUNK-002` | stray_artifacts | no |
+| `KWARG-001` | named_args | yes |
+| `LAYER-001` | layer_deps | no |
+| `LAYER-002` | layer_deps | no |
+| `LAYER-003` | layer_deps | no |
+| `LAYER-004` | layer_deps | no |
+| `LAYER-005` | layer_deps | no |
+| `LAYER-006` | layer_deps | no |
+| `META-001` | meta | no |
+| `META-002` | meta | no |
+| `META-003` | meta | no |
+| `META-004` | meta | no |
+| `META-005` | meta | no |
+| `NAMING-001` | naming_consistency | no |
+| `NAMING-002` | naming_consistency | no |
+| `NAMING-003` | naming_consistency | no |
+| `NAMING-004` | naming_consistency | no |
+| `PARAM-001` | file_limits | no |
+| `PATH-001` | forbidden_paths | no |
+| `PORT-001` | port_coverage | no |
+| `PORT-002` | port_coverage | no |
+| `PORT-003` | port_coverage | no |
+| `PROSE-001` | comments | no |
+| `PROSE-001` | prose | yes |
+| `PROSE-002` | prose | yes |
+| `PROSE-003` | comments | no |
+| `PROSE-003` | prose | yes |
+| `PROSE-004` | prose | yes |
+| `SECRETPY-001` | secrets | no |
+| `SHELL-001` | security_calls | no |
+| `SIMILAR-001` | similarity | yes |
+| `SIZE-001` | file_limits | no |
+| `SIZE-002` | file_limits | no |
+| `SIZE-003` | file_limits | no |
+| `SKILL-001` | skills | no |
+| `SKILL-002` | skills | no |
+| `SKILL-003` | skills | no |
+| `SKILL-004` | skills | no |
+| `SKILL-005` | skills | no |
+| `SKILL-006` | skills | no |
+| `SQL-001` | security_patterns | no |
+| `STALE-001` | stale_paths | no |
+| `TERM-NNN` | domain_terms | no |
+| `TESTFILE-001` | test_coverage | no |
+| `TLS-001` | security_calls | no |
+| `TYPE-001` | strong_types | no |
+| `TYPE-002` | strong_types | no |
+| `TYPE-003` | strong_types | no |
+| `TYPE-004` | strong_types | no |
+
+
+---
+
+# Source: docs/RULES.md
 # LaNorme rule reference
 
 This reference describes every rule code LaNorme can emit, one section per code, covering what each rule catches, what it deliberately ignores, where to configure it, and its measured precision, recall, and F1 where a labelled corpus exists.

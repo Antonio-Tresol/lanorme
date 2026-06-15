@@ -1,0 +1,12 @@
+# Per-directory config for the docs tree (a LaNorme region). A standalone
+# lanorme.toml uses top-level tables, not the [tool.lanorme.*] pyproject form.
+#
+# Inside the documentation, em dashes are welcome at the proportion and
+# distribution of natural edited English, so the outright PROSE-001 ban is
+# turned off here and replaced by the advisory PROSE-004 density rule, which
+# only flags sustained LLM-style overuse. Outside docs/ (the README, the
+# CHANGELOG, Python comments) the outright ban still applies.
+
+[prose]
+em_dash = false
+em_dash_density = true

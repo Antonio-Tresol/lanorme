@@ -1,0 +1,302 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lanorme.github.io/lanorme/lanorme.schema.json",
+  "title": "LaNorme configuration",
+  "description": "The [tool.lanorme] table in pyproject.toml, or top-level keys in a standalone lanorme.toml.",
+  "type": "object",
+  "properties": {
+    "select": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Run only these rule codes or categories. A category (`SEC`) covers every code in it; `ALL` selects everything."
+    },
+    "ignore": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Skip these rule codes or categories everywhere."
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "File-path globs to skip entirely; matched files are never walked."
+    },
+    "per-file-ignores": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "description": "Suppress specific rule codes or categories for files matching a glob."
+    },
+    "promote": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Advisory warnings whose codes (or `ALL`) become build-failing errors. Runs after every suppression, so an ignored or noqa'd warning is never promoted."
+    },
+    "extends": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ],
+      "description": "Adopt one or more profiles -- a bundled name (`strict`, `hexagonal`, `clean`, `layered`) or a path to a local `.toml`. Profiles merge left to right, then your own keys merge on top, so local always wins."
+    },
+    "baseline": {
+      "type": "string",
+      "description": "Path to a baseline file. Findings recorded by `lanorme baseline write` are suppressed, so only new findings report. See the adoption tutorial."
+    },
+    "source_root": {
+      "type": "string",
+      "description": "The top-level package directory when ports, adapters and layers live under a nested package; the architecture checks interpret their paths relative to it."
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extra check modules to import so they self-register, beyond the built-ins and entry-point plugins."
+    },
+    "attribute_access": {
+      "type": "object",
+      "description": "Settings for the attribute_access check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "comments": {
+      "type": "object",
+      "description": "Settings for the comments check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "docs": {
+      "type": "object",
+      "description": "Settings for the docs check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "domain_terms": {
+      "type": "object",
+      "description": "Settings for the domain_terms check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "duplication": {
+      "type": "object",
+      "description": "Settings for the duplication check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "file_limits": {
+      "type": "object",
+      "description": "Settings for the file_limits check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "forbidden_paths": {
+      "type": "object",
+      "description": "Settings for the forbidden_paths check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "layer_deps": {
+      "type": "object",
+      "description": "Settings for the layer_deps check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "Settings for the meta check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "named_args": {
+      "type": "object",
+      "description": "Settings for the named_args check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "naming_consistency": {
+      "type": "object",
+      "description": "Settings for the naming_consistency check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "pattern_divergence": {
+      "type": "object",
+      "description": "Settings for the pattern_divergence check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "port_coverage": {
+      "type": "object",
+      "description": "Settings for the port_coverage check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "prose": {
+      "type": "object",
+      "description": "Settings for the prose check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "restating": {
+      "type": "object",
+      "description": "Settings for the restating check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "description": "Settings for the secrets check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "security_calls": {
+      "type": "object",
+      "description": "Settings for the security_calls check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "security_patterns": {
+      "type": "object",
+      "description": "Settings for the security_patterns check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "similarity": {
+      "type": "object",
+      "description": "Settings for the similarity check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "description": "Settings for the skills check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stale_paths": {
+      "type": "object",
+      "description": "Settings for the stale_paths check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stray_artifacts": {
+      "type": "object",
+      "description": "Settings for the stray_artifacts check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "strong_types": {
+      "type": "object",
+      "description": "Settings for the strong_types check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "test_coverage": {
+      "type": "object",
+      "description": "Settings for the test_coverage check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "test_style": {
+      "type": "object",
+      "description": "Settings for the test_style check (see docs/RULES.md).",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

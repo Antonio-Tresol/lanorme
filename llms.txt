@@ -1,0 +1,23 @@
+# LaNorme
+
+> A precision-first, standard-library-only Python linter that makes a team's
+> coding standard -- quality, style, architecture, structure -- executable on
+> every commit. A false positive (firing on correct code) is the cardinal sin.
+
+Every page below is Markdown. Append `.md` to any docs URL to get its raw
+Markdown, or read these source files directly. `lanorme rule <CODE>` prints a
+rule's reference in the terminal; `lanorme.schema.json` validates configuration.
+
+## Docs
+
+- [Overview](https://lanorme.github.io/lanorme/index.md): What LaNorme is and the precision-first principle.
+- [Tutorial: adopt on an existing codebase](https://lanorme.github.io/lanorme/tutorials/adopt-on-existing-codebase.md): Two-command baseline onboarding for a brownfield repo.
+- [How-to: configure checks](https://lanorme.github.io/lanorme/how-to/configure-checks.md): Select, ignore, exclude, per-file-ignores and noqa.
+- [How-to: promote warnings to errors](https://lanorme.github.io/lanorme/how-to/promote-warnings.md): Make advisory rules build-failing.
+- [How-to: use profiles](https://lanorme.github.io/lanorme/how-to/use-profiles.md): Adopt strict and the architecture presets via extends.
+- [How-to: write a check](https://lanorme.github.io/lanorme/how-to/write-a-check.md): Add a custom rule as a plugin.
+- [Reference: configuration](https://lanorme.github.io/lanorme/reference/configuration.md): Every [tool.lanorme] key.
+- [Reference: rules](https://lanorme.github.io/lanorme/RULES.md): What every rule catches and how to configure it.
+- [Reference: rule index](https://lanorme.github.io/lanorme/reference/rules-index.md): Code to check mapping.
+- [Reference: CLI](https://lanorme.github.io/lanorme/reference/cli.md): Every command and flag.
+- [Explanation: precision-first](https://lanorme.github.io/lanorme/explanation/precision-first.md): Why a false positive is the cardinal sin.

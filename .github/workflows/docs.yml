@@ -1,0 +1,44 @@
+name: docs
+
+# Build and publish the versioned docs site to GitHub Pages with mike.
+# A push to main updates the "dev" docs; publishing a release publishes that
+# version (and moves the "latest" alias), the same trigger model as the PyPI
+# release workflow. One-time setup: enable GitHub Pages (Settings -> Pages)
+# with the gh-pages branch as the source.
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+
+      - name: Configure git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Publish dev docs (push to main)
+        if: github.event_name == 'push'
+        run: uv run --group docs mike deploy --push --update-aliases dev
+
+      - name: Publish release docs
+        if: github.event_name == 'release'
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          uv run --group docs mike deploy --push --update-aliases "$VERSION" latest
+          uv run --group docs mike set-default --push latest

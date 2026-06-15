@@ -41,6 +41,9 @@ lanorme = "lanorme.cli:main"
 # Runnable as ``uv run --group dev pytest tests/unit``.
 [dependency-groups]
 dev = ["pytest>=8"]
+# Docs site only; not a runtime or test dependency. The agent-facing artifacts
+# (Markdown, llms.txt, lanorme.schema.json) are generated without these.
+docs = ["mkdocs-material>=9.5", "mike>=2.1"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lanorme"]
@@ -76,6 +79,7 @@ exclude = [
     "docs/audit/*",                 # multi-reviewer audit reports (verbatim reviewer prose)
     ".venv/*",
     "dist/*",
+    "site/*",                       # mkdocs build output
 ]
 
 [tool.lanorme.prose]
@@ -99,4 +103,8 @@ enabled = true
 
 # Dogfood the opt-in fuzzy near-duplicate check on LaNorme itself.
 [tool.lanorme.similarity]
+enabled = true
+
+# Dogfood the docs-structure check on our own documentation.
+[tool.lanorme.docs]
 enabled = true

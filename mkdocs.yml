@@ -1,0 +1,86 @@
+site_name: LaNorme
+site_description: A precision-first, standard-library-only Python linter that makes a team's coding standard executable on every commit.
+site_url: https://lanorme.github.io/lanorme/
+repo_url: https://github.com/lanorme/lanorme
+repo_name: lanorme/lanorme
+edit_uri: edit/main/docs/
+docs_dir: docs
+# Design and corpus notes are working documents, not user docs; keep them out of the site.
+exclude_docs: |
+  audit/
+  *-design.md
+  *-corpus-design.md
+  *-corpus-audit.md
+
+theme:
+  name: material
+  features:
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.view
+  palette:
+    - scheme: default
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+hooks:
+  - hooks/copy_sources.py
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      # Mermaid diagrams: the source is text in the Markdown (so agents read it)
+      # and mkdocs-material renders it to an SVG (so humans see a diagram).
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra:
+  version:
+    provider: mike
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Adopt on an existing codebase: tutorials/adopt-on-existing-codebase.md
+  - How-to guides:
+      - how-to/index.md
+      - Configure checks: how-to/configure-checks.md
+      - Promote warnings to errors: how-to/promote-warnings.md
+      - Use profiles: how-to/use-profiles.md
+      - Write a check: how-to/write-a-check.md
+  - Reference:
+      - reference/index.md
+      - Configuration: reference/configuration.md
+      - Rules: RULES.md
+      - Rule index: reference/rules-index.md
+      - CLI: reference/cli.md
+  - Explanation:
+      - explanation/index.md
+      - Precision-first: explanation/precision-first.md
+      - Docs architecture: explanation/docs-architecture.md
