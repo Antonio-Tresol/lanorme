@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lanorme"
-version = "0.12.0"
+version = "0.13.0"
 description = "Executable codebase standards for Python: quality, style, architecture, and structure, checked mechanically on every commit."
 readme = "README.md"
 requires-python = ">=3.13"

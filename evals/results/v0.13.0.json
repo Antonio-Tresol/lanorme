@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "audited_version": "0.13.0",
+    "lanorme_version": "0.12.0",
+    "git_commit": "10de0f4",
+    "git_dirty": false,
+    "python_version": "3.14.0",
+    "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "timestamp_utc": "2026-06-15T03:27:14.536549+00:00"
+  },
+  "accuracy": [
+    {
+      "rule": "CMT-001",
+      "corpus": "evals/corpora/comments_commented_code",
+      "tp": 66,
+      "fp": 1,
+      "fn": 0,
+      "tn": 98,
+      "precision": 0.9850746268656716,
+      "recall": 1.0,
+      "f1": 0.9924812030075187
+    },
+    {
+      "rule": "CMT-005",
+      "corpus": "evals/corpora/comments_restating",
+      "tp": 33,
+      "fp": 0,
+      "fn": 46,
+      "tn": 88,
+      "precision": 1.0,
+      "recall": 0.4177215189873418,
+      "f1": 0.5892857142857143
+    },
+    {
+      "rule": "PROSE-004",
+      "corpus": "evals/corpora/prose_em_dash",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "tn": 11,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule": "SQL-001",
+      "corpus": "evals/corpora/security_raw_sql",
+      "tp": 41,
+      "fp": 0,
+      "fn": 0,
+      "tn": 79,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule": "SECRETPY-001",
+      "corpus": "evals/corpora/security_hardcoded_secrets",
+      "tp": 43,
+      "fp": 0,
+      "fn": 0,
+      "tn": 112,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule": "SIMILAR-001",
+      "corpus": "evals/corpora/duplication_similar",
+      "tp": 34,
+      "fp": 0,
+      "fn": 6,
+      "tn": 49,
+      "precision": 1.0,
+      "recall": 0.85,
+      "f1": 0.9189189189189189
+    }
+  ],
+  "performance": {}
+}

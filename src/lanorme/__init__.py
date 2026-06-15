@@ -27,7 +27,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 
 class Status(enum.Enum):
