@@ -56,16 +56,18 @@ The README "Versioning" section is canonical; keep them in step.
 1. Pick the new version `X.Y.Z`.
 2. Add a `## [X.Y.Z]` section to `CHANGELOG.md` describing the user-facing
    changes. Required: the release notes are taken verbatim from it.
-3. Regenerate the docs and record the eval audit:
+3. Regenerate the docs and review the audit numbers:
 
    ```
    uv run python scripts/gen_docs.py
-   uv run python evals/audit.py --version X.Y.Z
+   uv run python evals/audit.py --version X.Y.Z --output /tmp/preview.json
    ```
 
-   Review the audit (`evals/results/vX.Y.Z.json`); if any F1 changed,
-   update that rule's line in `docs/RULES.md`. Commit the regenerated docs and
-   the audit file.
+   Read the preview; if any F1 changed, update that rule's line in
+   `docs/RULES.md`. Commit the regenerated docs and any RULES.md change. Do not
+   commit the audit file yourself: `release.sh` records the committed
+   `evals/results/vX.Y.Z.json` for you, against the release commit (step 4), so
+   its version and commit stamp match the released tree.
 4. From the repo root, run the helper:
 
    ```
@@ -73,9 +75,11 @@ The README "Versioning" section is canonical; keep them in step.
    ```
 
    It refuses unless you are on `main`, the CHANGELOG section exists, the docs
-   are in sync, and the gates pass. Then it bumps the version in `pyproject.toml`
-   and `src/lanorme/__init__.py`, builds, runs `twine check`, commits, tags
-   `vX.Y.Z`, pushes, and creates the GitHub Release.
+   are in sync, and the gates pass (including an eval-audit precheck that the
+   corpora are not stale). Then it bumps the version in `pyproject.toml` and
+   `src/lanorme/__init__.py`, builds, runs `twine check`, commits the release,
+   records the eval audit against that commit (a second `Record X.Y.Z eval
+   audit` commit), tags `vX.Y.Z`, pushes, and creates the GitHub Release.
 5. Watch the publish and docs workflows, then verify the package is live:
 
    ```
@@ -115,9 +119,11 @@ The README "Versioning" section is canonical; keep them in step.
 
 ## Manual fallback (no script)
 
-Bump `version` in `pyproject.toml` and `__version__` in
-`src/lanorme/__init__.py`, edit `CHANGELOG.md`, run `uv run python
-scripts/gen_docs.py`, `uv run python evals/audit.py --version X.Y.Z`, `uv
-run --group dev pytest tests/unit`, and `uv run lanorme check .`, then `uv
-build`, `git commit`, `git tag -a vX.Y.Z`, `git push origin main`, `git push
-origin vX.Y.Z`, and `gh release create vX.Y.Z dist/* --notes "..."`.
+Edit `CHANGELOG.md`, run `uv run python scripts/gen_docs.py`, `uv run --group
+dev pytest tests/unit`, and `uv run lanorme check .`. Bump `version` in
+`pyproject.toml` and `__version__` in `src/lanorme/__init__.py`, then `uv
+build`, `git commit -m "Release X.Y.Z"`. Now record the audit against that
+commit: `uv run python evals/audit.py --version X.Y.Z` and `git commit -m
+"Record X.Y.Z eval audit" evals/results/`. Finally `git tag -a vX.Y.Z`, `git
+push origin main`, `git push origin vX.Y.Z`, and `gh release create vX.Y.Z
+dist/* --notes "..."`.

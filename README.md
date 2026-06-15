@@ -71,12 +71,12 @@ Summary: 24 checks — 23 passed, 0 warnings, 1 failed.
 ```
 
 The full command and flag reference, output formats, and `# noqa` suppression are
-in the [documentation](https://lanorme.github.io/lanorme/).
+in the [CLI reference](https://lanorme.github.io/lanorme/latest/reference/cli/).
 
 ## What it checks
 
 `lanorme rules` prints the live list. The
-[rule reference](https://lanorme.github.io/lanorme/) documents every rule: what it
+[rule reference](https://lanorme.github.io/lanorme/latest/RULES/) documents every rule: what it
 catches and what it does not, its config, and its measured precision and recall on
 the bundled corpora.
 
@@ -101,7 +101,7 @@ Off until you turn them on (layered or hexagonal architecture, domain
 vocabulary, house styles, Markdown docs structure, and experimental
 precision-first detectors): `LAYER`, `PORT`, `TERM`, `KWARG`, `NAMING-001/002`,
 `AAA`, `CMT-005`, `SIMILAR`, `ATTR`, `PROSE`, `DOCS`, `PATH`, `STALE`. The
-[rule reference](https://lanorme.github.io/lanorme/) documents each.
+[rule reference](https://lanorme.github.io/lanorme/latest/RULES/) documents each.
 
 ## Configuration
 
@@ -120,12 +120,12 @@ exclude = ["postman/**", "vendor/*"]
 
 That is the surface. The docs cover the rest without repeating it here:
 
-- [Configuration reference](https://lanorme.github.io/lanorme/): every key, its
-  type and default, plus a machine-readable JSON schema.
-- [Profiles (`extends`)](https://lanorme.github.io/lanorme/): the `strict`,
-  `hexagonal`, `clean` and `layered` bundles.
-- [Per-directory config](https://lanorme.github.io/lanorme/): drop a nested
-  `lanorme.toml` to tighten one subtree while the rest stays lenient.
+- [Configuration reference](https://lanorme.github.io/lanorme/latest/reference/configuration/):
+  every key, its type and default, plus a machine-readable JSON schema.
+- [Profiles (`extends`)](https://lanorme.github.io/lanorme/latest/how-to/use-profiles/):
+  the `strict`, `hexagonal`, `clean` and `layered` bundles.
+- [Per-directory config](https://lanorme.github.io/lanorme/latest/reference/configuration/):
+  drop a nested `lanorme.toml` to tighten one subtree while the rest stays lenient.
 
 ## Adopting on an existing codebase
 
@@ -139,14 +139,14 @@ lanorme baseline write    # records current findings to lanorme-baseline.json
 Add `baseline = "lanorme-baseline.json"` under `[tool.lanorme]` and commit the
 file like a lockfile. From then on every check runs at full strictness, but only
 what you add reports. The full walkthrough is the
-[adopt-on-an-existing-codebase tutorial](https://lanorme.github.io/lanorme/).
+[adopt-on-an-existing-codebase tutorial](https://lanorme.github.io/lanorme/latest/tutorials/adopt-on-existing-codebase/).
 
 ## Writing a check
 
 A check is any object with `name`, `description`, `rules`, and a `run` method;
 drop it in `lanorme/checks/`, ship it under the `lanorme.checks` entry-point
 group, or point at it with `[tool.lanorme] plugins = [...]`. The
-[write-a-check guide](https://lanorme.github.io/lanorme/) and
+[write-a-check guide](https://lanorme.github.io/lanorme/latest/how-to/write-a-check/) and
 [`CONTRIBUTING.md`](CONTRIBUTING.md) cover the setup, the gates, and the
 conventions for a new rule.
 

@@ -34,9 +34,11 @@ fi
 uv run --group dev pytest tests/unit -q
 uv run lanorme check .            # dogfood: nonzero exit on any FAIL
 uv run python scripts/gen_docs.py --check   # docs in sync: fail if generated docs are stale
-# eval audit: always record the deterministic accuracy audit for the
-# release (perf is run manually per the release skill).
-uv run python evals/audit.py --version "$VERSION" --no-perf
+# eval audit precheck: validate the labelled corpora are not stale before we
+# touch the tree (a stale fixture must block the release here, while the failure
+# still leaves the tree untouched). The recorded audit is written later, against
+# the release commit, so its version and commit stamp match the released tree.
+uv run python evals/audit.py --version "$VERSION" --no-perf --output "$(mktemp)"
 
 # --- bump the version (portable in-place edit) ------------------------------
 perl -i -pe "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
@@ -54,11 +56,19 @@ notes="$(awk -v v="## [$VERSION]" '
   grab {print}
 ' CHANGELOG.md)"
 
-# --- commit, tag, push, release (this fires the PyPI publish workflow) ------
+# --- commit the release, then record the audit against that commit ----------
 echo "--- changes to be released ---"
 git status --short
 git add -A
 git commit -m "Release $VERSION"
+
+# Record the eval audit against the just-made release commit, so its
+# lanorme_version, git_commit and git_dirty stamp match the released tree
+# (the installed __version__ is now bumped and the working tree is clean).
+uv run python evals/audit.py --version "$VERSION" --no-perf
+git add evals/results/
+git commit -m "Record $VERSION eval audit"
+
 git tag -a "$TAG" -m "$TAG"
 git push origin main
 git push origin "$TAG"
