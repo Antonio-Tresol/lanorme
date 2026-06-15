@@ -1,11 +1,11 @@
 # Why LaNorme is precision-first
 
-This explanation traces how one goal, making a team's coding standard
+This explanation traces how one goal, making a team's codebase standard
 executable and trustworthy enough to gate every commit, drives every design
 choice in the tool: the false-positive budget, the baseline, the stdlib-only
 stance, and the generated docs.
 
-LaNorme exists to do one thing well: make a team's coding standard executable
+LaNorme exists to do one thing well: make a team's codebase standard executable
 and trustworthy enough to gate every commit. Every design choice in the tool
 follows from that goal. The reasoning below ties the rules, the baseline, and
 the documentation together as parts of a single idea rather than a list of

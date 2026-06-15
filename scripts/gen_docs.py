@@ -285,7 +285,7 @@ def render_llms_txt() -> str:
         "# LaNorme",
         "",
         "> A precision-first, standard-library-only Python linter that makes a team's",
-        "> coding standard -- quality, style, architecture, structure -- executable on",
+        "> codebase standard -- quality, style, architecture, structure -- executable on",
         "> every commit. A false positive (firing on correct code) is the cardinal sin.",
         "",
         "Every page below is Markdown. Append `.md` to any docs URL to get its raw",

@@ -1,5 +1,5 @@
 site_name: LaNorme
-site_description: A precision-first, standard-library-only Python linter that makes a team's coding standard executable on every commit.
+site_description: A precision-first, standard-library-only Python linter that makes a team's codebase standard executable on every commit.
 site_url: https://lanorme.github.io/lanorme/
 repo_url: https://github.com/lanorme/lanorme
 repo_name: lanorme/lanorme

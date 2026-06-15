@@ -1,6 +1,6 @@
 # LaNorme
 
-LaNorme makes a coding standard executable. It is a precision-first,
+LaNorme makes a codebase standard executable. It is a precision-first,
 stdlib-only Python linter that turns the rules your team has agreed on into
 checks that run on every commit. It has zero runtime dependencies.
 
